@@ -1,0 +1,16 @@
+{
+  "name": "upnp-scrobble",
+  "version": "0.0.0",
+  "description": "upnp-scrobble",
+  "main": "app.js",
+  "author": {
+    "name": "Andreas Niedermair",
+    "email": "andreas@niedermair.name"
+  },
+  "license": "WTFPL",
+  "dependencies": {
+    "node-upnp-client": "0.0.2",
+    "scribble": "0.0.5",
+    "upnp-mediarenderer-client": "1.2.1"
+  }
+}
