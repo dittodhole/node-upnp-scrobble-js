@@ -24,7 +24,11 @@ client.on("response", function (headers, statusCode, rinfo) {
     mediaRendererClient.on("status", function (status) {
         parseString(status.AVTransportURIMetaData, function (error, result) {
             console.log(result);
-            
+
+            if (!result) {
+                return;
+            }
+
             // TODO remove namespaces in xml
             var play = {
                 "artist": result["DIDL-Lite"].item[0]["upnp:artist"][0],
