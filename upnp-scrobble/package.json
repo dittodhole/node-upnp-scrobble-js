@@ -9,8 +9,9 @@
   },
   "license": "WTFPL",
   "dependencies": {
-    "node-upnp-client": "0.0.2",
+    "node-ssdp": "^2.6.3",
     "scribble": "0.0.5",
-    "upnp-mediarenderer-client": "1.2.1"
+    "upnp-mediarenderer-client": "1.2.1",
+    "xml2js": "^0.4.15"
   }
 }
