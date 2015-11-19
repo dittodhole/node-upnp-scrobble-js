@@ -20,7 +20,7 @@ function scanNetwork() {
     client.on("response", function (device) {
         // TODO if the search is stable, no additional check against ST is needed anymore
         var st = device.ST;
-        if (st != "urn:schemas-upnp-org:device:MediaRenderer:1") {
+        if (st !== "urn:schemas-upnp-org:device:MediaRenderer:1") {
             return;
         }
 
