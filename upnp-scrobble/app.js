@@ -13,19 +13,20 @@ function prettyJson(obj) {
     return JSON.stringify(obj, null, 2);
 };
 
+const serviceType = "urn:schemas-upnp-org:device:MediaRenderer:1";
 function scanNetwork() {
     var client = new SSDP.Client();
     client.on("response", handleDevice);
 
     // TODO make the search stable
-    client.search("urn:schemas-upnp-org:device:MediaRenderer:1");
+    client.search(serviceType);
 };
 
 var devices = {};
 function handleDevice(device) {
     // TODO if the search is stable, no additional check against ST is needed anymore
     var st = device.ST;
-    if (st !== "urn:schemas-upnp-org:device:MediaRenderer:1") {
+    if (st !== serviceType) {
         return;
     }
     
