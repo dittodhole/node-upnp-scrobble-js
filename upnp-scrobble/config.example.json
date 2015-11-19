@@ -1,8 +1,9 @@
 {
-    "lastfm": {
-        "key": "",
-        "secret": "",
-        "username": "",
-        "password": ""
-    }
+  "logLevel": "trace",
+  "lastfm": {
+    "key": "",
+    "secret": "",
+    "username": "",
+    "password": ""
+  }
 }

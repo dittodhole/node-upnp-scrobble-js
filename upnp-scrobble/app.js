@@ -1,26 +1,58 @@
-﻿var Scribble = require("scribble");
-var Parser = require("xml2js");
-var SSDP = require("node-ssdp");
-var MediaRendererClient = require("upnp-mediarenderer-client");
-var Bunyan = require("bunyan");
+﻿var config = require("./config.json");
 
+var Bunyan = require("bunyan");
 var log = Bunyan.createLogger({
-    "name": "upnp-scrobbler"
+    "name": "upnp-scrobbler",
+    "level": config.logLevel
 });
 
-var config = require("./config.json");
+
+function getLocalAddresses() {
+    var localAddresses = [];
+    var OS = require("os");
+    var interfaces = OS.networkInterfaces();
+    Object.keys(interfaces).forEach(function (interface) {
+        interfaces[interface].forEach(function (address) {
+            if (address.family !== "IPv4") {
+                return;
+            }
+            if (address.internal) {
+                return;
+            }
+            localAddresses.push(address.address);
+        });
+    });
+    return localAddresses;
+};
+
+var localAddresses = getLocalAddresses();
+log.debug({
+    "message": "found following local addresses",
+    "localAddresses": localAddresses
+});
+
+var Express = require("express");
+var express = Express();
+// TODO express is used to listen to subscriptions
+
+//var HTTP = require("http");
+
+/*
+var Scribble = require("scribble");
 var scribble = new Scribble(config.lastfm.key,
                             config.lastfm.secret,
                             config.lastfm.username,
                             config.lastfm.password);
+*/
 
 const serviceType = "urn:schemas-upnp-org:device:MediaRenderer:1";
 function scanNetwork() {
+    var SSDP = require("node-ssdp");
     var client = new SSDP.Client({
-        "logLevel": "TRACE"
+        "logLevel": config.logLevel
     });
     client.on("response", handleDevice);
-
+    // TODO remove devices that are not present anymore
     // TODO make the search stable
     client.search(serviceType);
 };
@@ -45,12 +77,13 @@ function handleDevice(device) {
 
 function initializeDevice(device) {
     // spec: http://upnp.org/specs/av/UPnP-av-AVTransport-v1-Service.pdf
-    device.mediaRendererClient = new MediaRendererClient(device.LOCATION);
-    device.mediaRendererClient.on("status", handleStatus);
+    //var MediaRendererClient = require("upnp-mediarenderer-client");
+    //device.mediaRendererClient = new MediaRendererClient(device.LOCATION);
+    //device.mediaRendererClient.on("status", handleStatus);
 
     return device;
 };
-
+/*
 function handleStatus(status) {
     // TODO currently it looks like that only the first STATUS broadcast is received, any subsequent push are somehow swallowed
     if (status.TransportState !== "PLAYING") {
@@ -63,6 +96,7 @@ function handleStatus(status) {
 };
 
 function handleMetadata(metadata) {
+    var Parser = require("xml2js");
     Parser.parseString(metadata, function (error,
                                            result) {
         if (error) {
@@ -101,7 +135,7 @@ function parseResult(result) {
         "result": result
     });
 
-    for (var propertyName in result) {
+    for (let propertyName in result) {
         if (!result.hasOwnProperty(propertyName)) {
             continue;
         }
@@ -126,10 +160,12 @@ function parseResult(result) {
 
     return null;
 };
+*/
 
 log.info("Hi");
 
 const intervalTimeout = 30 * 1000;
 setInterval(scanNetwork,
             intervalTimeout);
+
 scanNetwork();

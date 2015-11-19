@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "bunyan": "^1.5.1",
+    "express": "^4.13.3",
     "node-ssdp": "^2.6.3",
     "scribble": "0.0.5",
     "upnp-mediarenderer-client": "1.2.1",
