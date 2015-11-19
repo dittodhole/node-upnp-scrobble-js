@@ -2,6 +2,11 @@
 var Parser = require("xml2js");
 var SSDP = require("node-ssdp");
 var MediaRendererClient = require("upnp-mediarenderer-client");
+var Bunyan = require("bunyan");
+
+var log = Bunyan.createLogger({
+    "name": "upnp-scrobbler"
+});
 
 var config = require("./config.json");
 var scribble = new Scribble(config.lastfm.key,
@@ -9,13 +14,11 @@ var scribble = new Scribble(config.lastfm.key,
                             config.lastfm.username,
                             config.lastfm.password);
 
-function prettyJson(obj) {
-    return JSON.stringify(obj, null, 2);
-};
-
 const serviceType = "urn:schemas-upnp-org:device:MediaRenderer:1";
 function scanNetwork() {
-    var client = new SSDP.Client();
+    var client = new SSDP.Client({
+        "logLevel": "TRACE"
+    });
     client.on("response", handleDevice);
 
     // TODO make the search stable
@@ -31,7 +34,10 @@ function handleDevice(device) {
     }
     
     if (!devices[device.LOCATION]) {
-        console.log("found a device: " + prettyJson(device));
+        log.info({
+            "message": "found a device",
+            "device": device
+        });
 
         devices[device.LOCATION] = initializeDevice(device);
     }
@@ -60,13 +66,16 @@ function handleMetadata(metadata) {
     Parser.parseString(metadata, function (error,
                                            result) {
         if (error) {
-            console.log("error occured during parsing: " + prettyJson(error));
+            log.error(error, "xml parsing error");
         } else {
             var play = parseResult(result);
             if (play) {
                 // TODO scrobble occurs immediately - usual experience: scrobble is triggered at around 80% of the position.
                 scribble.Scrobble(play, function (response) {
-                    console.log(response);
+                    log.info({
+                        "message": "scrobbled a play",
+                        "response": response
+                    });
                 });
             }
         }
@@ -87,7 +96,10 @@ const resultParsers = {
 };
 
 function parseResult(result) {
-    console.log("trying to find a parser for: " + prettyJson(result));
+    log.debug({
+        "message": "trying to find a parser",
+        "result": result
+    });
 
     for (var propertyName in result) {
         if (!result.hasOwnProperty(propertyName)) {
@@ -95,12 +107,18 @@ function parseResult(result) {
         }
 
         if (resultParsers.hasOwnProperty(propertyName)) {
-            console.log("found a parser for property: " + propertyName);
+            log.debug({
+                "message": "found a parser for property",
+                "property": propertyName
+            });
 
             var resultParser = resultParsers[propertyName];
             var play = resultParser(result);
 
-            console.log("parsed to following object: " + prettyJson(play));
+            log.debug({
+                "message": "parsed a play",
+                "play": play
+            });
 
             return play;
         }
@@ -109,7 +127,7 @@ function parseResult(result) {
     return null;
 };
 
-console.log("Hi");
+log.info("Hi");
 
 const intervalTimeout = 30 * 1000;
 setInterval(scanNetwork,
