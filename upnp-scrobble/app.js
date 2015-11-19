@@ -5,72 +5,81 @@ var MediaRendererClient = require("upnp-mediarenderer-client");
 
 var config = require("./config.json");
 var scribble = new Scribble(config.lastfm.key,
-    config.lastfm.secret,
-    config.lastfm.username,
-    config.lastfm.password);
+                            config.lastfm.secret,
+                            config.lastfm.username,
+                            config.lastfm.password);
 
 function prettyJson(obj) {
     return JSON.stringify(obj, null, 2);
 };
 
-var devices = {};
-
 function scanNetwork() {
     var client = new SSDP.Client();
-    client.on("response", function (device) {
-        // TODO if the search is stable, no additional check against ST is needed anymore
-        var st = device.ST;
-        if (st !== "urn:schemas-upnp-org:device:MediaRenderer:1") {
-            return;
-        }
-
-        if (devices[device.LOCATION]) {
-            return;
-        }
-
-        console.log("found a device: " + prettyJson(device));
-
-        devices[device.LOCATION] = initializeDevice(device);
-    });
+    client.on("response", handleDevice);
 
     // TODO make the search stable
     client.search("urn:schemas-upnp-org:device:MediaRenderer:1");
 };
 
+var devices = {};
+function handleDevice(device) {
+    // TODO if the search is stable, no additional check against ST is needed anymore
+    var st = device.ST;
+    if (st !== "urn:schemas-upnp-org:device:MediaRenderer:1") {
+        return;
+    }
+    
+    if (!devices[device.LOCATION]) {
+        console.log("found a device: " + prettyJson(device));
+
+        devices[device.LOCATION] = initializeDevice(device);
+    }
+};
+
 function initializeDevice(device) {
-    var mediaRendererClient = new MediaRendererClient(device.LOCATION);
-    mediaRendererClient.on("status", function (status) {
-        if (status.TransportState !== "PLAYING") {
-            return;
-        }
-
-        Parser.parseString(status.AVTransportURIMetaData, function (error, result) {
-            if (error) {
-                console.log("error occured during parsing: " + prettyJson(error));
-                return;
-            }
-
-            var play = parseResult(result);
-            if (!play) {
-                return;
-            }
-
-            scribble.Scrobble(play, function (response) {
-                console.log(response);
-            });
-            // TODO scrobble occurs immediately - usual experience: scrobble is triggered at around 80% of the position.
-        });
-    });
+    // spec: http://upnp.org/specs/av/UPnP-av-AVTransport-v1-Service.pdf
+    device.mediaRendererClient = new MediaRendererClient(device.LOCATION);
+    device.mediaRendererClient.on("status", handleStatus);
 
     return device;
 };
 
+function handleStatus(status) {
+    // TODO currently it looks like that only the first STATUS broadcast is received, any subsequent push are somehow swallowed
+    if (status.TransportState !== "PLAYING") {
+        return;
+    }
+    
+    if (status.hasOwnProperty("AVTransportURIMetadata")) {
+        handleMetadata(status.AVTransportURIMetaData);
+    }
+};
+
+function handleMetadata(metadata) {
+    Parser.parseString(metadata, function (error,
+                                           result) {
+        if (error) {
+            console.log("error occured during parsing: " + prettyJson(error));
+        } else {
+            var play = parseResult(result);
+            if (play) {
+                // TODO scrobble occurs immediately - usual experience: scrobble is triggered at around 80% of the position.
+                scribble.Scrobble(play, function (response) {
+                    console.log(response);
+                });
+            }
+        }
+    });
+};
+
 const resultParsers = {
     "DIDL-Lite": function (result) {
+        var innerResult = result["DIDL-Lite"];
+        var item = innerResult.item[0];
         var play = {
-            "artist": result.item[0]["upnp:artist"][0],
-            "track": result.item[0]["dc:title"][0],
-            "album": result.item[0]["upnp:album"][0]
+            "artist": item["upnp:artist"][0],
+            "track": item["dc:title"][0],
+            "album": item["upnp:album"][0]
         };
         return play;
     }
@@ -79,16 +88,16 @@ const resultParsers = {
 function parseResult(result) {
     console.log("trying to find a parser for: " + prettyJson(result));
 
-    for (var key in result) {
-        if (!result.hasOwnProperty(key)) {
+    for (var propertyName in result) {
+        if (!result.hasOwnProperty(propertyName)) {
             continue;
         }
 
-        if (resultParsers.hasOwnProperty(key)) {
-            var resultParser = resultParsers[key];
-            // TODO clarify if we need the inner result for other scenarios, or not ... ? :bomb:
-            var innerResult = result[key];
-            var play = resultParser(innerResult);
+        if (resultParsers.hasOwnProperty(propertyName)) {
+            console.log("found a parser for property: " + propertyName);
+
+            var resultParser = resultParsers[propertyName];
+            var play = resultParser(result);
 
             console.log("parsed to following object: " + prettyJson(play));
 
@@ -102,5 +111,6 @@ function parseResult(result) {
 console.log("Hi");
 
 const intervalTimeout = 30 * 1000;
-setInterval(scanNetwork, intervalTimeout);
+setInterval(scanNetwork,
+            intervalTimeout);
 scanNetwork();
