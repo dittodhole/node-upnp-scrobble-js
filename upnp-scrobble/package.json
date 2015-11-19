@@ -1,17 +1,26 @@
 {
   "name": "upnp-scrobble",
   "version": "0.0.0",
-  "description": "upnp-scrobble",
-  "main": "app.js",
+  "description": "A scrobbler that attaches to UPNP devices (MediaRenderer) and forwards plays to Last.fm",
   "author": {
     "name": "Andreas Niedermair",
     "email": "andreas@niedermair.name"
   },
-  "license": "WTFPL",
+  "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dittodhole/upnp-scrobble"
+  },
+  "bugs": {
+    "url": "https://github.com/dittodhole/upnp-scrobble/issues"
+  },
   "dependencies": {
     "node-ssdp": "^2.6.3",
     "scribble": "0.0.5",
     "upnp-mediarenderer-client": "1.2.1",
     "xml2js": "^0.4.15"
-  }
+  },
+  "private": true,
+  "engineStrict": true,
+  "license": "WTFPL"
 }
