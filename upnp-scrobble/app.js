@@ -24,10 +24,15 @@ function prettyJson(obj) {
   return JSON.stringify(obj, null, 2);
 };
 
+var client;
+
 function scanNetwork() {
-  // TODO remove devices that are not present anymore
+  if (client) {
+    client.stop();
+  }
+
   // TODO make the search stable
-  const client = new SSDP.Client({
+  client = new SSDP.Client({
     "logLevel": config.logLevel
   });
   client.on('response', handleDevice);
@@ -269,6 +274,9 @@ process.on('exit', function () {
       device.subscription.unsubscribe();
     }
   });
+  if (client) {
+    client.stop();
+  }
 });
 
 log.info('Hi');
