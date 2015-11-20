@@ -46,9 +46,8 @@ function handleDevice(device) {
 };
 
 function initializeDevice(device) {
-  HTTP.request(device.LOCATION,
-      (response) => parseDeviceDefinition(device,
-        response))
+  HTTP.request(device.LOCATION, (response) => parseDeviceDefinition(device,
+      response))
     .on('error', (error) => {
       log.error(error,
         'HTTP request to %s failed.',
@@ -78,8 +77,7 @@ function parseDeviceDefinition(device,
         return;
       }
 
-      var service = _.find(result.root.device.serviceList.service,
-        (device) => device.serviceType === avTransportServiceType);
+      var service = _.find(result.root.device.serviceList.service, (device) => device.serviceType === avTransportServiceType);
       if (!service) {
         log.error('Could not find a service of type %s at %s',
           avTransportServiceType,
@@ -104,6 +102,15 @@ function parseDeviceDefinition(device,
         eventSubUrl);
       device.subscription.on('message', (message) => processMessageFromDevice(device,
         message));
+      device.subscription.on('subscribed', (headers) => log.info('Subscribed for events at device',
+        url.hostname,
+        headers));
+      device.subscription.on('resubscribed', (headers) => log.info('Resubscribed for events at device',
+        url.hostname,
+        headers));
+      device.subscription.on('unsubscribed', (headers) => log.info('Unsubscribed for events at device',
+        url.hostname,
+        headers));
     });
   });
 };
@@ -153,11 +160,7 @@ function processMessageFromDevice(device,
 
     var metadataSource = event.InstanceID || event;
 
-    const metadataPropertyName = _.find(propertyNames,
-      (propertyName) => {
-        var property = metadataSource[propertyName];
-        return property !== undefined;
-      });
+    const metadataPropertyName = _.find(propertyNames, (propertyName) => metadataSource[propertyName] !== undefined);
     if (!metadataPropertyName) {
       log.error('Received message from device, but did not contain Metadata',
         device,
@@ -209,10 +212,8 @@ function handleMetadata(device,
     device.lastPlay = lastPlay;
 
     // TODO scrobble occurs immediately - usual experience: scrobble is triggered at around 80% of the position.
-    device.scribble.Scrobble(device.lastPlay, function (response) {
-      log.info('scrobbled a play',
-        response);
-    });
+    device.scribble.Scrobble(device.lastPlay, (response) => log.info('scrobbled a play',
+      response));
   });
 };
 
