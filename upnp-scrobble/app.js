@@ -263,7 +263,8 @@ function parseResult(result) {
 };
 
 process.on('exit', function () {
-  devices.forEach((device) => {
+  _.keys(devices).forEach((usn) => {
+    var device = devices[usn];
     if (device.subscription) {
       device.subscription.unsubscribe();
     }
