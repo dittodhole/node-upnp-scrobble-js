@@ -1,7 +1,7 @@
 {
   "name": "upnp-scrobble",
   "version": "0.0.0",
-  "description": "A scrobbler that attaches to UPNP devices (MediaRenderer) and forwards plays to Last.fm",
+  "description": "A scrobbler that attaches to UPnP devices (MediaRenderer) and forwards plays to Last.fm",
   "author": {
     "name": "Andreas Niedermair",
     "email": "andreas@niedermair.name"
@@ -17,7 +17,9 @@
   "dependencies": {
     "bunyan": "^1.5.1",
     "express": "^4.13.3",
+    "linq": "^3.0.5",
     "node-ssdp": "^2.6.3",
+    "node-upnp-subscription": "0.0.1",
     "scribble": "0.0.5",
     "upnp-mediarenderer-client": "1.2.1",
     "xml2js": "^0.4.15"

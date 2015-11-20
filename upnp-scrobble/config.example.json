@@ -1,5 +1,6 @@
 {
   "logLevel": "trace",
+  "scanInterval":  30000,
   "lastfm": {
     "key": "",
     "secret": "",

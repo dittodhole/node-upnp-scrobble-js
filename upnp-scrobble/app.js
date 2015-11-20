@@ -1,41 +1,17 @@
-﻿var config = require("./config.json");
+﻿var Bunyan = require('bunyan');
+var SSDP = require('node-ssdp');
+var HTTP = require('http');
+var URL = require('url');
+var Parser = require('xml2js');
+//var Subscription = require("node-upnp-subscription");
+//var MediaRendererClient = require("upnp-mediarenderer-client");
 
-var Bunyan = require("bunyan");
+var config = require('./config.json');
+
 var log = Bunyan.createLogger({
-    "name": "upnp-scrobbler",
-    "level": config.logLevel
+  "name": 'upnp-scrobble',
+  "level": config.logLevel
 });
-
-
-function getLocalAddresses() {
-    var localAddresses = [];
-    var OS = require("os");
-    var interfaces = OS.networkInterfaces();
-    Object.keys(interfaces).forEach(function (interface) {
-        interfaces[interface].forEach(function (address) {
-            if (address.family !== "IPv4") {
-                return;
-            }
-            if (address.internal) {
-                return;
-            }
-            localAddresses.push(address.address);
-        });
-    });
-    return localAddresses;
-};
-
-var localAddresses = getLocalAddresses();
-log.debug({
-    "message": "found following local addresses",
-    "localAddresses": localAddresses
-});
-
-var Express = require("express");
-var express = Express();
-// TODO express is used to listen to subscriptions
-
-//var HTTP = require("http");
 
 /*
 var Scribble = require("scribble");
@@ -45,44 +21,87 @@ var scribble = new Scribble(config.lastfm.key,
                             config.lastfm.password);
 */
 
-const serviceType = "urn:schemas-upnp-org:device:MediaRenderer:1";
+const serviceType = 'urn:schemas-upnp-org:device:MediaRenderer:1';
+
 function scanNetwork() {
-    var SSDP = require("node-ssdp");
-    var client = new SSDP.Client({
-        "logLevel": config.logLevel
-    });
-    client.on("response", handleDevice);
-    // TODO remove devices that are not present anymore
-    // TODO make the search stable
-    client.search(serviceType);
+  const client = new SSDP.Client({
+    "logLevel": config.logLevel
+  });
+  client.on('response', handleDevice);
+  // TODO remove devices that are not present anymore
+  // TODO make the search stable
+  client.search(serviceType);
 };
 
 var devices = {};
-function handleDevice(device) {
-    // TODO if the search is stable, no additional check against ST is needed anymore
-    var st = device.ST;
-    if (st !== serviceType) {
-        return;
-    }
-    
-    if (!devices[device.LOCATION]) {
-        log.info({
-            "message": "found a device",
-            "device": device
-        });
 
-        devices[device.LOCATION] = initializeDevice(device);
-    }
+function handleDevice(device) {
+  // TODO deal with disconnects and reconnects with different LOCATION
+  if (devices.ST !== serviceType) {
+    return;
+  }
+  if (!devices[device.USN]) {
+    log.info('found a device:',
+      device);
+
+    devices[device.USN] = initializeDevice(device);
+  }
 };
 
 function initializeDevice(device) {
-    // spec: http://upnp.org/specs/av/UPnP-av-AVTransport-v1-Service.pdf
-    //var MediaRendererClient = require("upnp-mediarenderer-client");
-    //device.mediaRendererClient = new MediaRendererClient(device.LOCATION);
-    //device.mediaRendererClient.on("status", handleStatus);
+  // spec: http://upnp.org/specs/av/UPnP-av-AVTransport-v1-Service.pdf
+  //device.mediaRendererClient = new MediaRendererClient(device.LOCATION);
+  //device.mediaRendererClient.on("status", handleStatus);
 
-    return device;
+  //device.subscription = new Subscription(host, port, infoSubUri);
+  var location = device.LOCATION;
+
+  HTTP.request(location,
+      (response) => parseDeviceDefinition(device,
+        response))
+    .on('error', (error) => {
+      log.error(error,
+        'HTTP request to %s failed.',
+        location);
+    })
+    .end();
+
+  /*
+  var url = URL.parse(location);
+
+  var hostname = url.hostname;
+  var port = url.port;
+  */
+
+  return device;
 };
+
+function parseDeviceDefinition(device,
+                               response) {
+  var responseBuffer = [];
+
+  response.on('data', (chunk) => {
+    responseBuffer.push(chunk);
+  });
+  response.on('end', () => {
+    var result = responseBuffer.join('')
+      .toString();
+    Parser.parseString(result, (error,
+                                result) => {
+      if (error) {
+        log.error(error,
+          'Parsing result of %s failed.',
+          device.LOCATION
+        );
+        return;
+      }
+      log.debug('Got response from %s',
+        device.LOCATION,
+        result);
+    });
+  });
+}
+
 /*
 function handleStatus(status) {
     // TODO currently it looks like that only the first STATUS broadcast is received, any subsequent push are somehow swallowed
@@ -96,7 +115,6 @@ function handleStatus(status) {
 };
 
 function handleMetadata(metadata) {
-    var Parser = require("xml2js");
     Parser.parseString(metadata, function (error,
                                            result) {
         if (error) {
@@ -162,10 +180,9 @@ function parseResult(result) {
 };
 */
 
-log.info("Hi");
+log.info('Hi');
 
-const intervalTimeout = 30 * 1000;
 setInterval(scanNetwork,
-            intervalTimeout);
+  config.scanInterval);
 
 scanNetwork();
