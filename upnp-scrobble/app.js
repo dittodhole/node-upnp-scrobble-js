@@ -20,6 +20,10 @@ var log = Bunyan.createLogger({
 const mediaRendererServiceType = 'urn:schemas-upnp-org:device:MediaRenderer:1';
 const avTransportServiceType = 'urn:schemas-upnp-org:service:AVTransport:1';
 
+function prettyJson(obj) {
+  return JSON.stringify(obj, null, 2);
+};
+
 function scanNetwork() {
   // TODO remove devices that are not present anymore
   // TODO make the search stable
@@ -82,7 +86,7 @@ function parseDeviceDefinition(device,
         log.error('Could not find a service of type %s at %s',
           avTransportServiceType,
           device.LOCATION,
-          result);
+          prettyJson(result));
         return;
       }
 
@@ -117,11 +121,11 @@ function parseDeviceDefinition(device,
 
 function processMessageFromDevice(device,
                                   message) {
-  var property = message.body['e:propertyset']['e:property'];
+  const property = message.body['e:propertyset']['e:property'];
   if (!property) {
     log.error('Received a message from device, but did not contain a property',
       device,
-      message);
+      prettyJson(message));
     return;
   }
 
@@ -129,8 +133,7 @@ function processMessageFromDevice(device,
   if (!lastChange) {
     log.error('Received a message from device, but did not contain a LastChange',
       device,
-      message,
-      property);
+      prettyJson(message));
     return;
   }
 
@@ -138,8 +141,7 @@ function processMessageFromDevice(device,
     if (error) {
       log.error('Tried to parse message from device, but failed',
         device,
-        message,
-        property);
+        prettyJson(message));
       return;
     }
 
@@ -147,13 +149,11 @@ function processMessageFromDevice(device,
     if (!event) {
       log.error('Received a message from device, but did not contain Event',
         device,
-        message,
-        result);
+        prettyJson(message));
       return;
     }
 
     const propertyNames = [
-      'Uri',
       'Metadata',
       'AVTransportURIMetaData'
     ];
@@ -164,8 +164,7 @@ function processMessageFromDevice(device,
     if (!metadataPropertyName) {
       log.error('Received message from device, but did not contain Metadata',
         device,
-        result,
-        event);
+        prettyJson(message));
       return;
     }
 
