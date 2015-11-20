@@ -1,10 +1,11 @@
 {
-  "logLevel": "trace",
-  "scanInterval":  30000,
+  "devices": null,
   "lastfm": {
     "key": "",
     "secret": "",
     "username": "",
     "password": ""
-  }
+  },
+  "logLevel": "trace",
+  "scanInterval": 30000
 }

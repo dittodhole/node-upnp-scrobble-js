@@ -1,10 +1,14 @@
-﻿var Bunyan = require('bunyan');
+﻿'use strict';
+
+var Bunyan = require('bunyan');
 var SSDP = require('node-ssdp');
 var HTTP = require('http');
 var URL = require('url');
-var Parser = require('xml2js');
-//var Subscription = require("node-upnp-subscription");
-//var MediaRendererClient = require("upnp-mediarenderer-client");
+var xml2js = require('xml2js');
+var xmlParser = new xml2js.Parser({ explicitArray: false });
+var Subscription = require('node-upnp-subscription');
+var _ = require('underscore');
+var Scribble = require('scribble');
 
 var config = require('./config.json');
 
@@ -13,35 +17,28 @@ var log = Bunyan.createLogger({
   "level": config.logLevel
 });
 
-/*
-var Scribble = require("scribble");
-var scribble = new Scribble(config.lastfm.key,
-                            config.lastfm.secret,
-                            config.lastfm.username,
-                            config.lastfm.password);
-*/
-
-const serviceType = 'urn:schemas-upnp-org:device:MediaRenderer:1';
+const mediaRendererServiceType = 'urn:schemas-upnp-org:device:MediaRenderer:1';
+const avTransportServiceType = 'urn:schemas-upnp-org:service:AVTransport:1';
 
 function scanNetwork() {
+  // TODO remove devices that are not present anymore
+  // TODO make the search stable
   const client = new SSDP.Client({
     "logLevel": config.logLevel
   });
   client.on('response', handleDevice);
-  // TODO remove devices that are not present anymore
-  // TODO make the search stable
-  client.search(serviceType);
+  client.search(mediaRendererServiceType);
 };
 
 var devices = {};
 
 function handleDevice(device) {
   // TODO deal with disconnects and reconnects with different LOCATION
-  if (devices.ST !== serviceType) {
+  if (device.ST !== mediaRendererServiceType) {
     return;
   }
   if (!devices[device.USN]) {
-    log.info('found a device:',
+    log.info('Found a device',
       device);
 
     devices[device.USN] = initializeDevice(device);
@@ -49,29 +46,15 @@ function handleDevice(device) {
 };
 
 function initializeDevice(device) {
-  // spec: http://upnp.org/specs/av/UPnP-av-AVTransport-v1-Service.pdf
-  //device.mediaRendererClient = new MediaRendererClient(device.LOCATION);
-  //device.mediaRendererClient.on("status", handleStatus);
-
-  //device.subscription = new Subscription(host, port, infoSubUri);
-  var location = device.LOCATION;
-
-  HTTP.request(location,
+  HTTP.request(device.LOCATION,
       (response) => parseDeviceDefinition(device,
         response))
     .on('error', (error) => {
       log.error(error,
         'HTTP request to %s failed.',
-        location);
+        device.LOCATION);
     })
     .end();
-
-  /*
-  var url = URL.parse(location);
-
-  var hostname = url.hostname;
-  var port = url.port;
-  */
 
   return device;
 };
@@ -80,109 +63,213 @@ function parseDeviceDefinition(device,
                                response) {
   var responseBuffer = [];
 
-  response.on('data', (chunk) => {
-    responseBuffer.push(chunk);
-  });
+  response.on('data', (chunk) => responseBuffer.push(chunk));
   response.on('end', () => {
-    var result = responseBuffer.join('')
+    var rawResult = responseBuffer.join('')
       .toString();
-    Parser.parseString(result, (error,
-                                result) => {
+
+    xmlParser.parseString(rawResult, (error,
+                                      result) => {
       if (error) {
         log.error(error,
           'Parsing result of %s failed.',
-          device.LOCATION
-        );
+          device.LOCATION,
+          response);
         return;
       }
-      log.debug('Got response from %s',
-        device.LOCATION,
-        result);
+
+      var service = _.find(result.root.device.serviceList.service,
+        (device) => device.serviceType === avTransportServiceType);
+      if (!service) {
+        log.error('Could not find a service of type %s at %s',
+          avTransportServiceType,
+          device.LOCATION,
+          result);
+        return;
+      }
+
+      device.scribble = new Scribble(config.lastfm.key,
+        config.lastfm.secret,
+        config.lastfm.username,
+        config.lastfm.password);
+
+      var url = URL.parse(device.LOCATION);
+
+      var hostname = url.hostname;
+      var port = url.port;
+      var eventSubUrl = service.eventSubURL;
+
+      device.subscription = new Subscription(hostname,
+        port,
+        eventSubUrl);
+      device.subscription.on('message', (message) => processMessageFromDevice(device,
+        message));
     });
   });
-}
-
-/*
-function handleStatus(status) {
-    // TODO currently it looks like that only the first STATUS broadcast is received, any subsequent push are somehow swallowed
-    if (status.TransportState !== "PLAYING") {
-        return;
-    }
-    
-    if (status.hasOwnProperty("AVTransportURIMetadata")) {
-        handleMetadata(status.AVTransportURIMetaData);
-    }
 };
 
-function handleMetadata(metadata) {
-    Parser.parseString(metadata, function (error,
-                                           result) {
-        if (error) {
-            log.error(error, "xml parsing error");
-        } else {
-            var play = parseResult(result);
-            if (play) {
-                // TODO scrobble occurs immediately - usual experience: scrobble is triggered at around 80% of the position.
-                scribble.Scrobble(play, function (response) {
-                    log.info({
-                        "message": "scrobbled a play",
-                        "response": response
-                    });
-                });
-            }
-        }
+function processMessageFromDevice(device,
+                                  message) {
+  var property = message.body['e:propertyset']['e:property'];
+  if (!property) {
+    log.error('Received a message from device, but did not contain a property',
+      device,
+      message);
+    return;
+  }
+
+  const lastChange = property.LastChange;
+  if (!lastChange) {
+    log.error('Received a message from device, but did not contain a LastChange',
+      device,
+      message,
+      property);
+    return;
+  }
+
+  xmlParser.parseString(lastChange, function (error, result) {
+    if (error) {
+      log.error('Tried to parse message from device, but failed',
+        device,
+        message,
+        property);
+      return;
+    }
+
+    const event = result.Event;
+    if (!event) {
+      log.error('Received a message from device, but did not contain Event',
+        device,
+        message,
+        result);
+      return;
+    }
+
+    const propertyNames = [
+      'Uri',
+      'Metadata',
+      'AVTransportURIMetaData'
+    ];
+
+    var metadataSource = event.InstanceID || event;
+
+    const metadataPropertyName = _.find(propertyNames,
+      (propertyName) => {
+        var property = metadataSource[propertyName];
+        return property !== undefined;
+      });
+    if (!metadataPropertyName) {
+      log.error('Received message from device, but did not contain Metadata',
+        device,
+        result,
+        event);
+      return;
+    }
+
+    const metadata = metadataSource[metadataPropertyName];
+
+    handleMetadata(device,
+      metadata);
+  });
+};
+
+function handleMetadata(device,
+                        metadata) {
+  const dollar = metadata['$'];
+  if (dollar) {
+    metadata = dollar.val || metadata;
+  }
+
+  xmlParser.parseString(metadata, function (error,
+                                            result) {
+    if (error) {
+      log.error(error,
+        'XML parsing error',
+        metadata);
+      return;
+    }
+
+    const lastPlay = parseResult(result);
+    if (!lastPlay) {
+      log.error('Tried to parse a play from result, but failed',
+        device,
+        result);
+      return;
+    }
+
+    if (_.isEqual(device.lastPlay,
+      lastPlay)) {
+      log.debug('Received a duplicate Event',
+        device,
+        lastPlay,
+        result);
+      return;
+    }
+
+    device.lastPlay = lastPlay;
+
+    // TODO scrobble occurs immediately - usual experience: scrobble is triggered at around 80% of the position.
+    device.scribble.Scrobble(device.lastPlay, function (response) {
+      log.info('scrobbled a play',
+        response);
     });
+  });
 };
 
 const resultParsers = {
-    "DIDL-Lite": function (result) {
-        var innerResult = result["DIDL-Lite"];
-        var item = innerResult.item[0];
-        var play = {
-            "artist": item["upnp:artist"][0],
-            "track": item["dc:title"][0],
-            "album": item["upnp:album"][0]
-        };
-        return play;
-    }
+  "DIDL-Lite": function (result) {
+    const innerResult = result['DIDL-Lite'];
+    const item = innerResult.item;
+    const play = {
+      "artist": item['upnp:artist'],
+      "track": item['dc:title'],
+      "album": item['upnp:album']
+    };
+    return play;
+  }
 };
 
 function parseResult(result) {
-    log.debug({
-        "message": "trying to find a parser",
-        "result": result
+  const resultParser = _.keys(resultParsers)
+    .find((propertyName) => {
+      return _.has(result,
+        propertyName);
     });
-
-    for (let propertyName in result) {
-        if (!result.hasOwnProperty(propertyName)) {
-            continue;
-        }
-
-        if (resultParsers.hasOwnProperty(propertyName)) {
-            log.debug({
-                "message": "found a parser for property",
-                "property": propertyName
-            });
-
-            var resultParser = resultParsers[propertyName];
-            var play = resultParser(result);
-
-            log.debug({
-                "message": "parsed a play",
-                "play": play
-            });
-
-            return play;
-        }
-    }
-
+  if (!resultParser) {
+    log.error('Tried to find parser, but failed',
+      result,
+      resultParsers);
     return null;
+  }
+
+  const play = resultParsers[resultParser](result);
+  return play;
 };
-*/
+
+process.on('uncaughtException', function (error) {
+  log.error(error,
+    'unhandled excpetion occured, sending UNSUBSCRIBE to all devices');
+  devices.forEach((device) => {
+    if (device.subscription) {
+      device.subscription.unsubscribe();
+    }
+  });
+});
+process.on('exit', function () {
+  devices.forEach((device) => {
+    if (device.subscription) {
+      device.subscription.unsubscribe();
+    }
+  });
+});
 
 log.info('Hi');
 
-setInterval(scanNetwork,
-  config.scanInterval);
+if (config.devices) {
+  config.devices.forEach((device) => handleDevice(device));
+} else {
+  setInterval(scanNetwork,
+    config.scanInterval);
 
-scanNetwork();
+  scanNetwork();
+}
