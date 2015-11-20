@@ -192,6 +192,12 @@ function handleMetadata(device,
     metadata = dollar.val || metadata;
   }
 
+  if (!_.isString(metadata)) {
+    log.error('Received metadata, which was not of type string',
+      prettyJson(metadata));
+    return;
+  }
+
   xmlParser.parseString(metadata, function (error,
                                             result) {
     if (error) {
