@@ -262,15 +262,6 @@ function parseResult(result) {
   return play;
 };
 
-process.on('uncaughtException', function (error) {
-  log.error(error,
-    'unhandled excpetion occured, sending UNSUBSCRIBE to all devices');
-  devices.forEach((device) => {
-    if (device.subscription) {
-      device.subscription.unsubscribe();
-    }
-  });
-});
 process.on('exit', function () {
   devices.forEach((device) => {
     if (device.subscription) {
