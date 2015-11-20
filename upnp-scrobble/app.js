@@ -37,11 +37,21 @@ function scanNetwork() {
 var devices = {};
 
 function handleDevice(device) {
-  // TODO deal with disconnects and reconnects with different LOCATION
   if (device.ST !== mediaRendererServiceType) {
     return;
   }
-  if (!devices[device.USN]) {
+  const storedDevice = devices[device.USN];
+  if (storedDevice) {
+    if (storedDevice.LOCATION !== device.LOCATION) {
+      log.info('Stored device discovered again at different location',
+        storedDevice.LOCATION,
+        device.LOCATION);
+      if (storedDevice.subscription) {
+        storedDevice.subscription.unsubscribe();
+        devices[device.USN] = initializeDevice(device);
+      }
+    }
+  } else {
     log.info('Found a device',
       device);
 
