@@ -61,6 +61,10 @@ function handleDevice(device) {
 };
 
 function initializeDevice(device) {
+  log.debug('Getting device definition from %s',
+    device.LOCATION,
+    device);
+
   HTTP.request(device.LOCATION, (response) => parseDeviceDefinition(device,
       response))
     .on('error', (error) => {
@@ -92,14 +96,19 @@ function parseDeviceDefinition(device,
         return;
       }
 
-      var service = _.find(result.root.device.serviceList.service, (device) => device.serviceType === avTransportServiceType);
-      if (!service) {
+      device.deviceDefinition = result;
+
+      device.avTransportService = _.find(device.deviceDefinition.root.device.serviceList.service, (service) => service.serviceType === avTransportServiceType);
+      if (!device.avTransportService) {
         log.error('Could not find a service of type %s at %s',
           avTransportServiceType,
           device.LOCATION,
-          prettyJson(result));
+          prettyJson(device.deviceDefinition));
         return;
       }
+
+      log.debug('Found AVTransportService',
+        device);
 
       device.scribble = new Scribble(config.lastfm.key,
         config.lastfm.secret,
@@ -110,21 +119,26 @@ function parseDeviceDefinition(device,
 
       var hostname = url.hostname;
       var port = url.port;
-      var eventSubUrl = service.eventSubURL;
+      var eventSubUrl = device.avTransportService.eventSubURL;
 
       device.subscription = new Subscription(hostname,
         port,
         eventSubUrl);
-      device.subscription.on('message', (message) => processMessageFromDevice(device,
-        message));
+      device.subscription.on('message', (message) => {
+        log.debug('Received message from device',
+          device,
+          prettyJson(message));
+        processMessageFromDevice(device,
+          message);
+      });
       device.subscription.on('subscribed', (headers) => log.debug('Subscribed for events at device',
-        url.hostname,
+        device,
         headers));
       device.subscription.on('resubscribed', (headers) => log.debug('Resubscribed for events at device',
-        url.hostname,
+        device,
         headers));
       device.subscription.on('unsubscribed', (headers) => log.debug('Unsubscribed for events at device',
-        url.hostname,
+        device,
         headers));
     });
   });
@@ -132,9 +146,6 @@ function parseDeviceDefinition(device,
 
 function processMessageFromDevice(device,
                                   message) {
-  log.debug('received a message',
-    prettyJson(message));
-
   const property = message.body['e:propertyset']['e:property'];
   if (!property) {
     log.error('Received a message from device, but did not contain a property',
@@ -263,6 +274,7 @@ function parseResult(result) {
   }
 
   const play = resultParsers[resultParser](result);
+
   return play;
 };
 
