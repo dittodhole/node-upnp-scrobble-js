@@ -123,7 +123,8 @@ function parseDeviceDefinition(device,
 
       device.subscription = new Subscription(hostname,
         port,
-        eventSubUrl);
+        eventSubUrl,
+        config.subscriptionTimeoutInSeconds);
       device.subscription.on('message', (message) => {
         log.debug('Received message from device',
           device,

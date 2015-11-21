@@ -7,5 +7,6 @@
     "password": ""
   },
   "logLevel": "trace",
-  "scanInterval": 30000
+  "scanInterval": 30000,
+  "subscriptionTimeoutInSeconds": 60
 }
