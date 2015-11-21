@@ -26,7 +26,7 @@ function prettyJson(obj) {
 
 function scanNetwork() {
   // TODO make the search stable
-  var client = new SSDP.Client({
+  const client = new SSDP.Client({
     "logLevel": config.logLevel
   });
   client.on('response', handleDevice);
@@ -39,10 +39,15 @@ function handleDevice(device) {
   if (device.ST !== mediaRendererServiceType) {
     return;
   }
+
+  log.debug('Handling device at %s',
+    device.LOCATION,
+    prettyJson(device));
+
   const storedDevice = devices[device.USN];
   if (storedDevice) {
     if (storedDevice.LOCATION !== device.LOCATION) {
-      log.info('Stored device discovered again at different location',
+      log.debug('Stored device discovered again at different location',
         storedDevice.LOCATION,
         device.LOCATION);
       if (storedDevice.subscription) {
@@ -51,9 +56,6 @@ function handleDevice(device) {
       }
     }
   } else {
-    log.info('Found a device',
-      device);
-
     devices[device.USN] = initializeDevice(device);
   }
 };
@@ -115,13 +117,13 @@ function parseDeviceDefinition(device,
         eventSubUrl);
       device.subscription.on('message', (message) => processMessageFromDevice(device,
         message));
-      device.subscription.on('subscribed', (headers) => log.info('Subscribed for events at device',
+      device.subscription.on('subscribed', (headers) => log.debug('Subscribed for events at device',
         url.hostname,
         headers));
-      device.subscription.on('resubscribed', (headers) => log.info('Resubscribed for events at device',
+      device.subscription.on('resubscribed', (headers) => log.debug('Resubscribed for events at device',
         url.hostname,
         headers));
-      device.subscription.on('unsubscribed', (headers) => log.info('Unsubscribed for events at device',
+      device.subscription.on('unsubscribed', (headers) => log.debug('Unsubscribed for events at device',
         url.hostname,
         headers));
     });
@@ -130,6 +132,9 @@ function parseDeviceDefinition(device,
 
 function processMessageFromDevice(device,
                                   message) {
+  log.debug('received a message',
+    prettyJson(message));
+
   const property = message.body['e:propertyset']['e:property'];
   if (!property) {
     log.error('Received a message from device, but did not contain a property',
