@@ -1,3 +1,0 @@
-﻿# upnp-scrobble
-
-
