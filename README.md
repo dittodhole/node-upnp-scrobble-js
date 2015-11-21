@@ -24,7 +24,7 @@ response)
 7. UPnP-device pushes upnp-scrobble on events
 8. upnp-scrobble pushes the play to Last.fm
 9. upnp-scrobble sends an *UNSUBSCRIBE* request upon exit
-10. 
+
 ![](resources/slide01.jpg)
 ![](resources/slide02.jpg)
 ![](resources/slide03.jpg)
