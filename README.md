@@ -9,8 +9,9 @@ Scrobble plays of your UPnP-devices to Last.fm
 ```$ node app.js```
 
 For pretty logging-output
-```$ npm install bunyan -g```
-```$ node app.js | bunyan```
+
+    $ npm install bunyan -g
+    $ node app.js | bunyan
 
 ## flow
 
