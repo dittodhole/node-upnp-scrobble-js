@@ -1,24 +1,20 @@
-﻿'use strict';
-
-var Bunyan = require('bunyan');
+﻿var Bunyan = require('bunyan');
 var SSDP = require('node-ssdp');
-var HTTP = require('http');
-var URL = require('url');
-var xml2js = require('xml2js');
-var xmlParser = new xml2js.Parser({ explicitArray: false });
-var Subscription = require('node-upnp-subscription');
 var _ = require('underscore');
+var objectPath = require('object-path');
 var Scribble = require('scribble');
 
+var upnpServiceDiscovery = require('./lib/upnp-service-discovery.js');
+var upnpMessage = require('./lib/upnp-message.js');
+
 var config = require('./config.json');
+
+'use strict';
 
 var log = Bunyan.createLogger({
   "name": 'upnp-scrobble',
   "level": config.logLevel
 });
-
-const mediaRendererServiceType = 'urn:schemas-upnp-org:device:MediaRenderer:1';
-const avTransportServiceType = 'urn:schemas-upnp-org:service:AVTransport:1';
 
 function prettyJson(obj) {
   return JSON.stringify(obj, null, 2);
@@ -30,265 +26,71 @@ function scanNetwork() {
     "logLevel": config.logLevel
   });
   client.on('response', handleDevice);
-  client.search(mediaRendererServiceType);
+  client.search(config.deviceType);
 };
 
 var devices = {};
 
 function handleDevice(device) {
-  if (device.ST !== mediaRendererServiceType) {
+  if (device.ST !== config.deviceType) {
     return;
   }
 
-  log.debug('Handling device at %s',
-    device.LOCATION,
-    prettyJson(device));
-
   const storedDevice = devices[device.USN];
-  if (storedDevice) {
-    if (storedDevice.LOCATION !== device.LOCATION) {
-      log.debug('Stored device discovered again at different location',
-        storedDevice.LOCATION,
-        device.LOCATION);
-      if (storedDevice.subscription) {
-        storedDevice.subscription.unsubscribe();
-        devices[device.USN] = initializeDevice(device);
-      }
-    }
-  } else {
-    devices[device.USN] = initializeDevice(device);
+  if (!storedDevice || storedDevice.LOCATION !== device.LOCATION) {
+    log.info('Adding device',
+      device);
+    devices[device.USN] = device;
+    initializeDevice(device);
   }
 };
 
 function initializeDevice(device) {
-  log.debug('Getting device definition from %s',
-    device.LOCATION,
-    device);
-
-  HTTP.request(device.LOCATION, (response) => parseDeviceDefinition(device,
-      response))
-    .on('error', (error) => {
+  upnpServiceDiscovery.subscribe(device.LOCATION, config.serviceType, (error, message) => {
+    if (error) {
       log.error(error,
-        'HTTP request to %s failed.',
+        'Received an error on subscription of service % at %',
+        config.serviceType,
         device.LOCATION);
-    })
-    .end();
+      delete device[device.USN];
+    } else if (message) {
+      upnpMessage.getEventMetadata(message, (error, metadata) => {
+        if (error) {
+          log.warn(error,
+            'Parameter "message" has no child-element "Metadata"',
+            prettyJson(message));
+        } else if (metadata) {
+          const play = {
+            'artist': objectPath.get(metadata, 'DIDL-Lite.item.upnp:artist'),
+            'track': objectPath.get(metadata, 'DIDL-Lite.item.dc:title'),
+            'album': objectPath.get(metadata, 'DIDL-Lite.item.upnp:album')
+          };
+          if (!_.isEqual(device.lastPlay, play)) {
+            device.lastPlay = play;
 
-  return device;
-};
-
-function parseDeviceDefinition(device,
-                               response) {
-  var responseBuffer = [];
-
-  response.on('data', (chunk) => responseBuffer.push(chunk));
-  response.on('end', () => {
-    var rawResult = responseBuffer.join('')
-      .toString();
-
-    xmlParser.parseString(rawResult, (error,
-                                      result) => {
-      if (error) {
-        log.error(error,
-          'Parsing result of %s failed.',
-          device.LOCATION,
-          response);
-        return;
-      }
-
-      device.deviceDefinition = result;
-
-      device.avTransportService = _.find(device.deviceDefinition.root.device.serviceList.service, (service) => service.serviceType === avTransportServiceType);
-      if (!device.avTransportService) {
-        log.error('Could not find a service of type %s at %s',
-          avTransportServiceType,
-          device.LOCATION,
-          prettyJson(device.deviceDefinition));
-        return;
-      }
-
-      log.debug('Found AVTransportService',
-        device);
-
-      device.scribble = new Scribble(config.lastfm.key,
-        config.lastfm.secret,
-        config.lastfm.username,
-        config.lastfm.password);
-
-      var url = URL.parse(device.LOCATION);
-
-      var hostname = url.hostname;
-      var port = url.port;
-      var eventSubUrl = device.avTransportService.eventSubURL;
-
-      device.subscription = new Subscription(hostname,
-        port,
-        eventSubUrl,
-        config.subscriptionTimeoutInSeconds);
-      device.subscription.on('message', (message) => {
-        log.debug('Received message from device',
-          device,
-          prettyJson(message));
-        processMessageFromDevice(device,
-          message);
+            // TODO scrobble occurs immediately - usual experience: scrobble is triggered at around 80% of the position.
+            const scribble = new Scribble(config.lastfm.key,
+              config.lastfm.secret,
+              config.lastfm.username,
+              config.lastfm.password);
+            scribble.Scrobble(device.lastPlay, (response) => log.info('scrobbled a play', response));
+          }
+        } else {
+          log.warn('Parameter "message" has no child-element "Metadata"',
+            prettyJson(message));
+        }
       });
-      device.subscription.on('subscribed', (headers) => log.debug('Subscribed for events at device',
-        device,
-        headers));
-      device.subscription.on('resubscribed', (headers) => log.debug('Resubscribed for events at device',
-        device,
-        headers));
-      device.subscription.on('unsubscribed', (headers) => log.debug('Unsubscribed for events at device',
-        device,
-        headers));
-    });
-  });
-};
-
-function processMessageFromDevice(device,
-                                  message) {
-  const property = message.body['e:propertyset']['e:property'];
-  if (!property) {
-    log.error('Received a message from device, but did not contain a property',
-      device,
-      prettyJson(message));
-    return;
-  }
-
-  const lastChange = property.LastChange;
-  if (!lastChange) {
-    log.error('Received a message from device, but did not contain a LastChange',
-      device,
-      prettyJson(message));
-    return;
-  }
-
-  xmlParser.parseString(lastChange, function (error, result) {
-    if (error) {
-      log.error('Tried to parse message from device, but failed',
-        device,
+    } else {
+      log.warn('Received empty metadata',
         prettyJson(message));
-      return;
     }
-
-    const event = result.Event;
-    if (!event) {
-      log.error('Received a message from device, but did not contain Event',
-        device,
-        prettyJson(message));
-      return;
-    }
-
-    const propertyNames = [
-      'Metadata',
-      'AVTransportURIMetaData'
-    ];
-
-    var metadataSource = event.InstanceID || event;
-
-    const metadataPropertyName = _.find(propertyNames, (propertyName) => metadataSource[propertyName] !== undefined);
-    if (!metadataPropertyName) {
-      log.error('Received message from device, but did not contain Metadata',
-        device,
-        prettyJson(message));
-      return;
-    }
-
-    const metadata = metadataSource[metadataPropertyName];
-
-    handleMetadata(device,
-      metadata);
-  });
+  }, config.subscriptionTimeoutInSeconds);
 };
-
-function handleMetadata(device,
-                        metadata) {
-  const dollar = metadata['$'];
-  if (dollar) {
-    metadata = dollar.val || metadata;
-  }
-
-  if (!_.isString(metadata)) {
-    log.error('Received metadata, which was not of type string',
-      prettyJson(metadata));
-    return;
-  }
-
-  xmlParser.parseString(metadata, function (error,
-                                            result) {
-    if (error) {
-      log.error(error,
-        'XML parsing error',
-        metadata);
-      return;
-    }
-
-    const lastPlay = parseResult(result);
-    if (!lastPlay) {
-      log.error('Tried to parse a play from result, but failed',
-        device,
-        result);
-      return;
-    }
-
-    if (_.isEqual(device.lastPlay,
-      lastPlay)) {
-      log.debug('Received a duplicate Event',
-        device,
-        lastPlay,
-        result);
-      return;
-    }
-
-    device.lastPlay = lastPlay;
-
-    // TODO scrobble occurs immediately - usual experience: scrobble is triggered at around 80% of the position.
-    device.scribble.Scrobble(device.lastPlay, (response) => log.info('scrobbled a play',
-      response));
-  });
-};
-
-const resultParsers = {
-  "DIDL-Lite": function (result) {
-    const innerResult = result['DIDL-Lite'];
-    const item = innerResult.item;
-    const play = {
-      "artist": item['upnp:artist'],
-      "track": item['dc:title'],
-      "album": item['upnp:album']
-    };
-    return play;
-  }
-};
-
-function parseResult(result) {
-  const resultParser = _.keys(resultParsers)
-    .find((propertyName) => {
-      return _.has(result,
-        propertyName);
-    });
-  if (!resultParser) {
-    log.error('Tried to find parser, but failed',
-      result,
-      resultParsers);
-    return null;
-  }
-
-  const play = resultParsers[resultParser](result);
-
-  return play;
-};
-
-process.on('exit', function () {
-  _.keys(devices).forEach((usn) => {
-    var device = devices[usn];
-    if (device.subscription) {
-      device.subscription.unsubscribe();
-    }
-  });
-});
 
 log.info('Hi');
+
+// unhandled exceptions should be handled by FOREVER, restarting the app
+//process.on('uncaughtException', (error) => log.error(error));
 
 if (config.devices) {
   config.devices.forEach((device) => handleDevice(device));
