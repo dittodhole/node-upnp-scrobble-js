@@ -56,6 +56,18 @@ function getServices(location, callback) {
 };
 
 function getDeviceDefinition(location, callback) {
+  getRawDeviceDefinition(location, (error, rawResult) => {
+    if (error) {
+      callback(error);
+    } else if (rawResult) {
+      xmlParser.parseString(rawResult, callback);
+    } else {
+      callback(new Error('No device definition available'));
+    }
+  });
+};
+
+function getRawDeviceDefinition(location, callback) {
   const request = HTTP.get(location, (response) => {
     var responseBuffer = [];
 
@@ -63,13 +75,14 @@ function getDeviceDefinition(location, callback) {
     response.on('end', () => {
       var rawResult = responseBuffer.join('').toString();
 
-      xmlParser.parseString(rawResult, callback);
+      callback(null, rawResult);
     });
-    response.on('error', (error) => callback(error));
+    response.on('error', callback);
   });
-  request.on('error', (error) => callback(error));
+  request.on('error', callback);
 };
 
+exports.getRawDeviceDefinition = getRawDeviceDefinition;
 exports.getDeviceDefinition = getDeviceDefinition;
 exports.getServices = getServices;
 exports.getService = getService;
