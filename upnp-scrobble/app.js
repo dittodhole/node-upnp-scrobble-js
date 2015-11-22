@@ -3,8 +3,8 @@ var SSDP = require('node-ssdp');
 var _ = require('underscore');
 var objectPath = require('object-path');
 var Scribble = require('scribble');
+var upnpDevice = require('node-upnp-device-js');
 
-var upnpServiceDiscovery = require('./lib/upnp-service-discovery.js');
 var upnpMessage = require('./lib/upnp-message.js');
 
 var config = require('./config.json');
@@ -46,7 +46,7 @@ function handleDevice(device) {
 };
 
 function initializeDevice(device) {
-  upnpServiceDiscovery.subscribe(device.LOCATION, config.serviceType, (error, message) => {
+  upnpDevice.subscribe(device.LOCATION, config.serviceType, (error, message) => {
     if (error) {
       log.error(error,
         'Received an error on subscription of service % at %',

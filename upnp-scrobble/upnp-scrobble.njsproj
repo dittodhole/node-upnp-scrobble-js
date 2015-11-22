@@ -36,7 +36,6 @@
   <ItemGroup>
     <Compile Include="app.js" />
     <Compile Include="lib\upnp-message.js" />
-    <Compile Include="lib\upnp-service-discovery.js" />
     <Content Include="config.json" />
     <Content Include="package.json" />
   </ItemGroup>
