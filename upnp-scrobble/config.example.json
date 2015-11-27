@@ -1,14 +1,10 @@
 {
-  "devices": null,
-  "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:1",
   "lastfm": {
     "key": "",
     "secret": "",
     "username": "",
     "password": ""
   },
-  "logLevel": "trace",
-  "scanInterval": 30000,
   "serviceType": "urn:schemas-upnp-org:service:AVTransport:1",
-  "subscriptionTimeoutInSeconds": 60
+  "serverPort": 1337
 }

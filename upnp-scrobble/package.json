@@ -16,9 +16,8 @@
   },
   "dependencies": {
     "bunyan": "^1.5.1",
-    "node-ssdp": "^2.6.3",
-    "node-upnp-device-js": "0.0.2",
     "object-path": "^0.9.2",
+    "peer-upnp": "0.0.4",
     "scribble": "0.0.5",
     "underscore": "^1.8.3",
     "xml2js": "^0.4.15"
