@@ -18,6 +18,17 @@ function prettyJson(obj) {
   return JSON.stringify(obj, null, 2);
 };
 
+function parseDuration(duration) {
+  const parts = duration.split(':');
+  const seconds = (+parts[0]) * 60 * 60 + (+parts[1]) * 60 + (+parts[2]);
+  return seconds;
+}
+
+const scribble = new Scribble(config.lastfm.key,
+  config.lastfm.secret,
+  config.lastfm.username,
+  config.lastfm.password);
+
 var log = Bunyan.createLogger({
   'name': 'upnp-scrobble',
   'level': config.logLevel
@@ -25,7 +36,7 @@ var log = Bunyan.createLogger({
 
 log.info('Hi');
 
-var devices = {};
+var services = {};
 
 var server = http.createServer();
 server.listen(config.serverPort);
@@ -38,14 +49,23 @@ upnp.createPeer({
     log.info('Found a service',
       service.USN);
 
-    if (devices[service.USN]) {
+    if (services[service.USN]) {
       return;
     }
 
-    var lastPlay = {};
-    service/*.bind(function (service) {
-      const b = 1;
-    })*/.on('event', function (data) {
+    var timeout = null;
+    var serviceClient = null;
+    var lastSong = null;
+
+    service.clearScrobbleTimeout = function () {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+    };
+
+    service.bind(function (service) {
+      serviceClient = service;
+    }).on('event', function (data) {
       log.info('Received an event from service',
         service.USN,
         prettyJson(data));
@@ -78,30 +98,44 @@ upnp.createPeer({
             return;
           }
 
-          const play = {
+          const song = {
             'artist': objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
             'track': objectPath.get(data, 'DIDL-Lite.item.dc:title'),
-            'album': objectPath.get(data, 'DIDL-Lite.item.upnp:album')
+            'album': objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
+            'duration': objectPath.get(data, 'DIDL-Lite.item.res.duration')
           };
 
-          if (_.isEqual(lastPlay, play)) {
-            log.warn('Already scrobbled play',
-              prettyJson(play));
+          if (_.isEqual(lastSong, song)) {
+            log.warn('Already scrobbled song',
+              prettyJson(song));
             return;
           }
 
-          lastPlay = play;
+          service.clearScrobbleTimeout();
 
-          // TODO scrobble occurs immediately - usual experience: scrobble is triggered at around 80% of the position.
-          const scribble = new Scribble(config.lastfm.key,
-            config.lastfm.secret,
-            config.lastfm.username,
-            config.lastfm.password);
-          scribble.Scrobble(lastPlay, (response) => log.info('scrobbled a play', response));
+          lastSong = song;
+
+          scribble.NowPlaying(song);
+
+          serviceClient.GetPositionInfo({
+            'InstanceID': 0
+          }, (result) => {
+            var trackDuration = parseDuration(result.TrackDuration);
+            var relTime = parseDuration(result.RelTime);
+            var offset = Math.max(1, trackDuration * 0.8 - relTime) * 1000;
+            timeout = setTimeout(() => {
+              scribble.Scrobble(song);
+            }, offset);
+          });
         });
       });
     }).on('disappear', function (service) {
-      delete devices[service.USN];
+      service = services[service.USN];
+      if (service) {
+        service.clearScrobbleTimeout();
+      }
+
+      delete services[service.USN];
     });
   });
 }).start();
