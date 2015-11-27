@@ -36,8 +36,6 @@ var log = Bunyan.createLogger({
 
 log.info('Hi');
 
-var services = {};
-
 var server = http.createServer();
 server.listen(config.serverPort);
 
@@ -45,97 +43,114 @@ var upnp = require('peer-upnp');
 upnp.createPeer({
   'server': server
 }).on('ready', function (peer) {
-  peer.on(config.serviceType, function (service) {
-    log.info('Found a service',
-      service.USN);
+  const intervalFn = () => {
+    peer.removeListener(config.serviceType, handleService);
+    peer.on(config.serviceType, handleService);
+  };
+  peer.on('disappear', unhandleService);
+  setInterval(intervalFn, config.scanInterval || 30000);
+  intervalFn();
+}).
+start();
 
-    if (services[service.USN]) {
+var services = {};
+
+function handleService(service) {
+  log.info('Found a service',
+    service.USN);
+
+  if (services[service.USN]) {
+    return;
+  }
+
+  services[service.USN] = service;
+
+  service.clearScrobbleTimeout = function () {
+    if (service.scrobbleTimeout) {
+      clearTimeout(service.scrobbleTimeout);
+    }
+  };
+
+  service.bind(function (serviceClient) {
+    service.serviceClient = serviceClient;
+  });
+  service.on('event', (data) => handleEvent(data, service));
+};
+
+function handleEvent(data, service) {
+  log.info('Received an event from service',
+    service.USN,
+    prettyJson(data));
+
+  var lastChange = data.LastChange;
+  if (!_.isString(lastChange)) {
+    return;
+  }
+
+  xmlParser.parseString(lastChange, function (error, data) {
+    if (error) {
+      log.warn(error,
+        'Could not parse lastChange',
+        lastChange);
       return;
     }
 
-    var timeout = null;
-    var serviceClient = null;
-    var lastSong = null;
-
-    service.clearScrobbleTimeout = function () {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-    };
-
-    service.bind(function (service) {
-      serviceClient = service;
-    }).on('event', function (data) {
-      log.info('Received an event from service',
-        service.USN,
+    var metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
+    if (!metadata) {
+      log.warn('No metadata inside',
         prettyJson(data));
+      return;
+    }
 
-      var lastChange = data.LastChange;
-      if (!_.isString(lastChange)) {
+    xmlParser.parseString(metadata, function (error, data) {
+      if (error) {
+        log.error(error,
+          'Could not parse metadata',
+          metadata);
         return;
       }
 
-      xmlParser.parseString(lastChange, function (error, data) {
-        if (error) {
-          log.warn(error,
-            'Could not parse lastChange',
-            lastChange);
-          return;
-        }
+      const song = {
+        'artist': objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
+        'track': objectPath.get(data, 'DIDL-Lite.item.dc:title'),
+        'album': objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
+        'duration': objectPath.get(data, 'DIDL-Lite.item.res.duration')
+      };
 
-        var metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
-        if (!metadata) {
-          log.warn('No metadata inside',
-            prettyJson(data));
-          return;
-        }
-
-        xmlParser.parseString(metadata, function (error, data) {
-          if (error) {
-            log.error(error,
-              'Could not parse metadata',
-              metadata);
-            return;
-          }
-
-          const song = {
-            'artist': objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
-            'track': objectPath.get(data, 'DIDL-Lite.item.dc:title'),
-            'album': objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
-            'duration': objectPath.get(data, 'DIDL-Lite.item.res.duration')
-          };
-
-          if (_.isEqual(lastSong, song)) {
-            log.warn('Already scrobbled song',
-              prettyJson(song));
-            return;
-          }
-
-          service.clearScrobbleTimeout();
-
-          lastSong = song;
-
-          scribble.NowPlaying(song);
-
-          serviceClient.GetPositionInfo({
-            'InstanceID': 0
-          }, (result) => {
-            var trackDuration = parseDuration(result.TrackDuration);
-            var relTime = parseDuration(result.RelTime);
-            var offset = Math.max(1, trackDuration * 0.8 - relTime) * 1000;
-            timeout = setTimeout(() => {
-              scribble.Scrobble(song);
-            }, offset);
-          });
-        });
-      });
-    }).on('disappear', function (service) {
-      service = services[service.USN];
-      if (service) {
-        service.clearScrobbleTimeout();
+      if (_.isEqual(service.lastSong, song)) {
+        log.warn('Already scrobbled song',
+          prettyJson(song));
+        return;
       }
 
-      delete services[service.USN];
+      service.clearScrobbleTimeout();
+
+      service.lastSong = song;
+
+      scribble.NowPlaying(song);
+
+      service.serviceClient.GetPositionInfo({
+        'InstanceID': 0
+      }, (result) => {
+        var trackDuration = parseDuration(result.TrackDuration);
+        var relTime = parseDuration(result.RelTime);
+        var offset = Math.max(1, trackDuration * 0.8 - relTime) * 1000;
+        service.scrobbleTimeout = setTimeout(() => {
+          scribble.Scrobble(song);
+        }, offset);
+      });
     });
   });
-}).start();
+};
+
+function unhandleService(service) {
+  service = services[service.USN];
+  if (service) {
+    service.clearScrobbleTimeout();
+    if (service.timeoutHandle) {
+      clearTimeout(service.timeoutHandle);
+    }
+  }
+
+  delete services[service.USN];
+}

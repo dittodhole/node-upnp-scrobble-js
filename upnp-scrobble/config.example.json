@@ -5,6 +5,7 @@
     "username": "",
     "password": ""
   },
+  "scanInterval": 30000,
   "serviceType": "urn:schemas-upnp-org:service:AVTransport:1",
   "serverPort": 1337
 }
