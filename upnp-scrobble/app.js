@@ -66,9 +66,12 @@ function handleService(service) {
   services[service.USN] = service;
 
   service.clearScrobbleTimeout = function () {
-    if (service.scrobbleTimeout) {
-      clearTimeout(service.scrobbleTimeout);
+    if (!service.scrobbleTimeout) {
+      return;
     }
+
+    clearTimeout(service.scrobbleTimeout);
+    service.scrobbleTimeout = null;
   };
 
   service.bind(function (serviceClient) {
