@@ -90,8 +90,7 @@ function handleEvent(data, service) {
         lastChange);
       return;
     }
-
-    var transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
+    const transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
     if (transportState === 'NO_MEDIA_PRESENT') {
       log.info('No media present');
       return;
