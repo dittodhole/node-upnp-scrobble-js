@@ -75,6 +75,8 @@ function handleEvent(data, service) {
 
   const lastChange = data.LastChange;
   if (!_.isString(lastChange)) {
+    log.warn('LastChange was not of type string',
+      prettyJson(data));
     return;
   }
 
