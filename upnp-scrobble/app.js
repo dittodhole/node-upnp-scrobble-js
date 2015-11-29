@@ -129,16 +129,18 @@ function handleEvent(data, service) {
 
       scribble.NowPlaying(song);
 
-      service.serviceClient.GetPositionInfo({
-        'InstanceID': 0
-      }, (result) => {
-        var trackDuration = parseDuration(result.TrackDuration);
-        var relTime = parseDuration(result.RelTime);
-        var offset = Math.max(1, trackDuration * 0.8 - relTime) * 1000;
-        service.scrobbleTimeout = setTimeout(() => {
-          scribble.Scrobble(song);
-        }, offset);
-      });
+      if (service.serviceClient.GetPositionInfo) {
+        service.serviceClient.GetPositionInfo({
+          'InstanceID': 0
+        }, (result) => {
+          var trackDuration = parseDuration(result.TrackDuration);
+          var relTime = parseDuration(result.RelTime);
+          var offset = Math.max(1, trackDuration * 0.8 - relTime) * 1000;
+          service.scrobbleTimeout = setTimeout(() => {
+            scribble.Scrobble(song);
+          }, offset);
+        });
+      }
     });
   });
 };
