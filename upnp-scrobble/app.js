@@ -95,6 +95,7 @@ function handleEvent(data, service) {
     const transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
     if (transportState === 'NO_MEDIA_PRESENT') {
       log.info('No media present');
+      service.clearScrobbleTimeout();
       return;
     }
 
