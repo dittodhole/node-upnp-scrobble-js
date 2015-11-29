@@ -42,7 +42,7 @@ server.listen(config.serverPort);
 
 upnp.createPeer({
   'server': server
-}).on('ready', function (peer) {
+}).on('ready', (peer) => {
   const intervalFn = () => {
     peer.removeListener(config.serviceType, handleService);
     peer.on(config.serviceType, handleService);
@@ -57,7 +57,7 @@ function handleService(service) {
     service.USN,
     service.device.modelName);
 
-  service.clearScrobbleTimeout = function () {
+  service.clearScrobbleTimeout = () => {
     if (!service.scrobbleTimeout) {
       return;
     }
@@ -66,7 +66,7 @@ function handleService(service) {
     service.scrobbleTimeout = null;
   };
 
-  service.bind(function (serviceClient) {
+  service.bind((serviceClient) => {
     service.serviceClient = serviceClient;
   });
   service.on('event', (data) => handleEvent(data, service));
@@ -82,7 +82,7 @@ function handleEvent(data, service) {
     return;
   }
 
-  xmlParser.parseString(lastChange, function (error, data) {
+  xmlParser.parseString(lastChange, (error, data) => {
     if (error) {
       log.warn(error,
         'Could not parse lastChange',
@@ -105,7 +105,7 @@ function handleEvent(data, service) {
       return;
     }
 
-    xmlParser.parseString(metadata, function (error, data) {
+    xmlParser.parseString(metadata, (error, data) => {
       if (error) {
         log.error(error,
           'Could not parse metadata',
