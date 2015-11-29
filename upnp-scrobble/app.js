@@ -98,6 +98,12 @@ function handleEvent(data, service) {
       return;
     }
 
+    var transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
+    if (transportState === 'NO_MEDIA_PRESENT') {
+      log.info('No media present');
+      return;
+    }
+
     var instanceId = objectPath.get(data, 'Event.InstanceID.val');
     var metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
     if (!metadata) {
