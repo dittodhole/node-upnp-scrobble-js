@@ -58,10 +58,6 @@ function handleService(service) {
     service.device.modelName);
 
   service.clearScrobbleTimeout = () => {
-    if (!service.scrobbleTimeout) {
-      return;
-    }
-
     clearTimeout(service.scrobbleTimeout);
     service.scrobbleTimeout = null;
   };
