@@ -53,18 +53,10 @@ upnp.createPeer({
 }).
 start();
 
-var services = {};
-
 function handleService(service) {
   log.info('Found a service',
     service.USN,
     service.device.modelName);
-
-  if (services[service.USN]) {
-    return;
-  }
-
-  services[service.USN] = service;
 
   service.clearScrobbleTimeout = function () {
     if (!service.scrobbleTimeout) {
@@ -157,11 +149,6 @@ function handleEvent(data, service) {
 };
 
 function unhandleService(service) {
-  service = services[service.USN];
-  if (service) {
-    service.clearScrobbleTimeout();
-    service.removeAllListeners('event');
-
-    delete services[service.USN];
-  }
+  service.clearScrobbleTimeout();
+  service.removeAllListeners('event');
 }
