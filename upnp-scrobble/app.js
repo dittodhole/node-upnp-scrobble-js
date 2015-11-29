@@ -98,6 +98,7 @@ function handleEvent(data, service) {
       return;
     }
 
+    var instanceId = objectPath.get(data, 'Event.InstanceID.val');
     var metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
     if (!metadata) {
       log.warn('No metadata inside',
@@ -134,7 +135,7 @@ function handleEvent(data, service) {
 
       if (service.serviceClient.GetPositionInfo) {
         service.serviceClient.GetPositionInfo({
-          'InstanceID': 0
+          'InstanceID': instanceId
         }, (result) => {
           var trackDuration = parseDuration(result.TrackDuration);
           var relTime = parseDuration(result.RelTime);
