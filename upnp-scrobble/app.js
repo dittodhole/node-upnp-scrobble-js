@@ -152,10 +152,8 @@ function unhandleService(service) {
   service = services[service.USN];
   if (service) {
     service.clearScrobbleTimeout();
-    if (service.timeoutHandle) {
-      clearTimeout(service.timeoutHandle);
-    }
-  }
+    service.removeAllListeners('event');
 
-  delete services[service.USN];
+    delete services[service.USN];
+  }
 }
