@@ -1,16 +1,17 @@
-﻿var Bunyan = require('bunyan');
-var http = require('http');
-var _ = require('underscore');
-var xml2js = require('xml2js');
-var xmlParser = new xml2js.Parser({
+﻿const Bunyan = require('bunyan');
+const http = require('http');
+const upnp = require('peer-upnp');
+const _ = require('underscore');
+const xml2js = require('xml2js');
+const xmlParser = new xml2js.Parser({
   'mergeAttrs': true,
   'explicitArray': false,
   'ignoreXmlns': true
 });
-var objectPath = require('object-path');
-var Scribble = require('scribble');
+const objectPath = require('object-path');
+const Scribble = require('scribble');
 
-var config = require('./config.json');
+const config = require('./config.json');
 
 'use strict';
 
@@ -29,17 +30,16 @@ const scribble = new Scribble(config.lastfm.key,
   config.lastfm.username,
   config.lastfm.password);
 
-var log = Bunyan.createLogger({
+const log = Bunyan.createLogger({
   'name': 'upnp-scrobble',
   'level': config.logLevel
 });
 
 log.info('Hi');
 
-var server = http.createServer();
+const server = http.createServer();
 server.listen(config.serverPort);
 
-var upnp = require('peer-upnp');
 upnp.createPeer({
   'server': server
 }).on('ready', function (peer) {
@@ -50,8 +50,7 @@ upnp.createPeer({
   peer.on('disappear', unhandleService);
   setInterval(intervalFn, config.scanInterval || 30000);
   intervalFn();
-}).
-start();
+}).start();
 
 function handleService(service) {
   log.info('Found a service',
@@ -78,7 +77,7 @@ function handleEvent(data, service) {
     service.USN,
     prettyJson(data));
 
-  var lastChange = data.LastChange;
+  const lastChange = data.LastChange;
   if (!_.isString(lastChange)) {
     return;
   }
@@ -90,14 +89,16 @@ function handleEvent(data, service) {
         lastChange);
       return;
     }
+
     const transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
     if (transportState === 'NO_MEDIA_PRESENT') {
       log.info('No media present');
       return;
     }
 
-    var instanceId = objectPath.get(data, 'Event.InstanceID.val');
-    var metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
+    const instanceId = objectPath.get(data, 'Event.InstanceID.val');
+
+    const metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
     if (!metadata) {
       log.warn('No metadata inside',
         prettyJson(data));
@@ -135,9 +136,9 @@ function handleEvent(data, service) {
         service.serviceClient.GetPositionInfo({
           'InstanceID': instanceId
         }, (result) => {
-          var trackDuration = parseDuration(result.TrackDuration);
-          var relTime = parseDuration(result.RelTime);
-          var offset = Math.max(1, trackDuration * 0.8 - relTime) * 1000;
+          const trackDuration = parseDuration(result.TrackDuration);
+          const relTime = parseDuration(result.RelTime);
+          const offset = Math.max(1, trackDuration * 0.8 - relTime) * 1000;
           service.scrobbleTimeout = setTimeout(() => {
             scribble.Scrobble(song);
           }, offset);
@@ -150,4 +151,4 @@ function handleEvent(data, service) {
 function unhandleService(service) {
   service.clearScrobbleTimeout();
   service.removeAllListeners('event');
-}
+};
