@@ -20,6 +20,10 @@ function prettyJson(obj) {
 };
 
 function parseDuration(duration) {
+  if (!duration) {
+    return -1;
+  }
+
   const parts = duration.split(':');
   const seconds = (+parts[0]) * 60 * 60 + (+parts[1]) * 60 + (+parts[2]);
   return seconds;
