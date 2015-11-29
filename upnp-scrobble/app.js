@@ -57,7 +57,8 @@ var services = {};
 
 function handleService(service) {
   log.info('Found a service',
-    service.USN);
+    service.USN,
+    service.device.modelName);
 
   if (services[service.USN]) {
     return;
