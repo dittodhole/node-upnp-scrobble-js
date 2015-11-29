@@ -99,55 +99,69 @@ function handleEvent(data, service) {
       return;
     }
 
-    const instanceId = objectPath.get(data, 'Event.InstanceID.val');
-
-    const metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
-    if (!metadata) {
-      log.warn('No metadata inside',
-        prettyJson(data));
+    if (transportState === 'PAUSED_PLAYBACK') {
+      log.info('Playback paused');
+      service.clearScrobbleTimeout();
       return;
     }
 
-    xmlParser.parseString(metadata, (error, data) => {
-      if (error) {
-        log.error(error,
-          'Could not parse metadata',
-          metadata);
+    const metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
+    if (transportState === 'PLAYING'
+      || metadata) {
+      log.info('Playing');
+
+      const instanceId = objectPath.get(data, 'Event.InstanceID.val');
+
+      metadata = metadata || service.lastMetadata;
+      if (!metadata) {
+        log.warn('No metadata inside',
+          prettyJson(data));
         return;
       }
 
-      const song = {
-        'artist': objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
-        'track': objectPath.get(data, 'DIDL-Lite.item.dc:title'),
-        'album': objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
-        'duration': objectPath.get(data, 'DIDL-Lite.item.res.duration')
-      };
+      service.lastMetadata = metadata;
 
-      if (_.isEqual(service.lastSong, song)) {
-        log.warn('Already scrobbled song',
-          prettyJson(song));
-        return;
-      }
+      xmlParser.parseString(metadata, (error, data) => {
+        if (error) {
+          log.error(error,
+            'Could not parse metadata',
+            metadata);
+          return;
+        }
 
-      service.clearScrobbleTimeout();
+        const song = {
+          'artist': objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
+          'track': objectPath.get(data, 'DIDL-Lite.item.dc:title'),
+          'album': objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
+          'duration': objectPath.get(data, 'DIDL-Lite.item.res.duration')
+        };
 
-      service.lastSong = song;
+        service.clearScrobbleTimeout();
 
-      scribble.NowPlaying(song);
+        scribble.NowPlaying(song);
 
-      if (service.serviceClient.GetPositionInfo) {
-        service.serviceClient.GetPositionInfo({
-          'InstanceID': instanceId
-        }, (result) => {
-          const trackDuration = parseDuration(result.TrackDuration);
-          const relTime = parseDuration(result.RelTime);
-          const offset = Math.max(1, trackDuration * 0.8 - relTime) * 1000;
-          service.scrobbleTimeout = setTimeout(() => {
-            scribble.Scrobble(song);
-          }, offset);
-        });
-      }
-    });
+        if (service.serviceClient.GetPositionInfo) {
+          service.serviceClient.GetPositionInfo({
+            'InstanceID': instanceId
+          }, (result) => {
+            const trackDuration = parseDuration(result.TrackDuration);
+            if (trackDuration === -1) {
+              return;
+            }
+
+            const relTime = parseDuration(result.RelTime);
+            if (relTime === -1) {
+              return;
+            }
+
+            const offset = Math.max(1, trackDuration * 0.8 - relTime) * 1000;
+            service.scrobbleTimeout = setTimeout(() => {
+              scribble.Scrobble(song);
+            }, offset);
+          });
+        }
+      });
+    }
   });
 };
 
