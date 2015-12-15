@@ -26,6 +26,7 @@ function parseDuration(duration) {
 
   const parts = duration.split(':');
   const seconds = (+parts[0]) * 60 * 60 + (+parts[1]) * 60 + (+parts[2]);
+
   return seconds;
 }
 
@@ -41,7 +42,10 @@ const log = Bunyan.createLogger({
 
 log.info('Hi');
 
-const server = http.createServer();
+const server = http.createServer(function (req, res) {
+  log.info('Receiving request',
+    req.rawHeaders.slice(2, 8));
+});
 server.listen(config.serverPort);
 
 upnp.createPeer({
