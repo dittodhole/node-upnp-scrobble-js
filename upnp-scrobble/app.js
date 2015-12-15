@@ -65,7 +65,7 @@ function handleService(service) {
     service.USN,
     service.device.modelName);
 
-  service.clearScrobbleTimeout = () => {
+  service.dispose = () => {
     clearTimeout(service.scrobbleTimeout);
     service.scrobbleTimeout = null;
   };
@@ -99,13 +99,13 @@ function handleEvent(data, service) {
     const transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
     if (transportState === 'NO_MEDIA_PRESENT') {
       log.info('No media present');
-      service.clearScrobbleTimeout();
+      service.dispose();
       return;
     }
 
     if (transportState === 'PAUSED_PLAYBACK') {
       log.info('Playback paused');
-      service.clearScrobbleTimeout();
+      service.dispose();
       return;
     }
 
@@ -140,7 +140,7 @@ function handleEvent(data, service) {
           'duration': objectPath.get(data, 'DIDL-Lite.item.res.duration')
         };
 
-        service.clearScrobbleTimeout();
+        service.dispose();
 
         scribble.NowPlaying(song);
 
@@ -170,6 +170,6 @@ function handleEvent(data, service) {
 };
 
 function unhandleService(service) {
-  service.clearScrobbleTimeout();
+  service.dispose();
   service.removeAllListeners('event');
 };
