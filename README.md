@@ -36,3 +36,6 @@ response) over HTTP
 - upnp-scrobble uses [scribble](https://github.com/TerrordactylDesigns/scribble), which does not scrobble the album of your track. I have a [patched fork](https://github.com/dittodhole/scribble) available.
 - ~~On a regular basis the UPnP-device does not send events. I am still investigating this very issue.~~ ~~Please use the `subscriptionTimeoutInSeconds` configuration parameter, which sould be decreased if you see missing notifications. This will result in a shorter timeout of the subscriptions, and a more frequent resubscription.~~ peer-upnp discovers the *optimal* resubscription interval by looking up the timeout from the *SUBSCRIBE* response.
 - I have tested the setup with [Raumfeld One S](www.teufelaudio.com/raumfeld-audio-streaming/raumfeld-one-s-p14713.html), [Netgear WNDR 3700](www.netgear.com/home/products/networking/wifi-routers/wndr3700.aspx), and a [Raspberry PI 2](https://www.raspberrypi.org/products/raspberry-pi-2-model-b/) running [Raspbian](https://www.raspbian.org/).
+## License
+
+node-upnp-scrobble-js is published under [WTFNMFPLv3](http://andreas.niedermair.name/introducing-wtfnmfplv3).
