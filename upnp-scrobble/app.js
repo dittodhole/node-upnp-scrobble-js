@@ -10,6 +10,8 @@ const xmlParser = new xml2js.Parser({
 });
 const objectPath = require('object-path');
 const Scribble = require('scribble');
+const handlebars = require('handlebars');
+const fs = require('fs');
 
 const config = require('./config.json');
 
@@ -40,7 +42,19 @@ var container = {
   "server": http.createServer(function (req, res) {
     container.logger.info('Receiving request',
       req.rawHeaders.slice(2, 8));
+  }).on('request', function (req, res) {
+    if (req.url !== '/') {
+      return;
+    }
 
+    const source = fs.readFileSync('views/index.hbs', 'utf-8');
+    const template = handlebars.compile(source);
+    const html = template(container);
+    res.writeHead(200, {
+      "Content-Type": 'text/html'
+    });
+    res.write(html);
+    res.end();
   }).listen(config.serverPort)
 };
 
