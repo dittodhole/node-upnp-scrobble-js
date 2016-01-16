@@ -3,9 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <title></title>
-  <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.css">
+  <link rel="stylesheet" href="//milligram.github.io/css/milligram.min.css">
 </head>
-<body>
+<body style="margin: 10px;">
   {{#if song}}
   <h1>Currently playing</h1>
   <ul>
@@ -15,14 +17,9 @@
     </li>
     {{/each}}
   </ul>
-  <h2>Playing since</h2>
-  {{playingSince}}
-  <h2>Playing until</h2>
-  {{playingUntil}}
-  <h2>Scrobbling at</h2>
-  {{scrobblingAt}}
+  -->
   {{/if}}
-  <h2>Connected Devices</h2>
+  <h1>Connected Devices</h1>
   <ul>
     {{#each peer.remoteDevices}}
     <li>
@@ -33,7 +30,7 @@
         <li>
           {{this.serviceType}}
           {{#if this.lastMetadata}}
-          <pre class="prettyprint" style="white-space: pre-wrap"><code class="language-xml">{{this.lastMetadata}}</code></pre>
+          <pre><code>{{this.lastMetadata}}</code></pre>
           {{/if}}
         </li>
         {{/each}}

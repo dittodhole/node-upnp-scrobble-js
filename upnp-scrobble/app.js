@@ -149,10 +149,11 @@ function handleEvent(data, service) {
         }
 
         container.song = {
-          'artist': objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
-          'track': objectPath.get(data, 'DIDL-Lite.item.dc:title'),
-          'album': objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
-          'duration': objectPath.get(data, 'DIDL-Lite.item.res.duration')
+          "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
+          "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
+          "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
+          "duration": objectPath.get(data, 'DIDL-Lite.item.res.duration'),
+          "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI')
         };
 
         service.cancelScrobbling();
