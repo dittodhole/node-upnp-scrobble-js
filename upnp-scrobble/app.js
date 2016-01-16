@@ -142,7 +142,7 @@ function handleEvent(data, service) {
           return;
         }
 
-        const song = {
+        container.song = {
           'artist': objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
           'track': objectPath.get(data, 'DIDL-Lite.item.dc:title'),
           'album': objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
