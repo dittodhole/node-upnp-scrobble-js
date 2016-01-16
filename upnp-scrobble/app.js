@@ -83,7 +83,6 @@ function handleService(service) {
     service.scrobbleTimeout = null;
   };
 
-
   service.bind(function (serviceClient) {
     service.serviceClient = serviceClient;
   }).on('event', function (data) {
