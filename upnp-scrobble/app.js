@@ -158,6 +158,7 @@ function handleEvent(data, service) {
         service.cancelScrobbling();
 
         container.scribble.NowPlaying(container.song);
+        container.playingSince = new Date();
 
         if (service.serviceClient.GetPositionInfo) {
           service.serviceClient.GetPositionInfo({
@@ -173,10 +174,16 @@ function handleEvent(data, service) {
               return;
             }
 
+            container.playingUntil = new Date();
+            container.playingUntil.setSeconds(container.playingUntil.getSeconds() + relTime);
+
             const offset = Math.max(1, trackDuration * 0.8 - relTime) * 1000;
             service.scrobbleTimeout = setTimeout(function () {
               container.scribble.Scrobble(container.song);
             }, offset);
+
+            container.scrobblingAt = new Date();
+            container.scrobblingAt.setTime(container.scrobblingAt.getTime() + offset);
           });
         }
       });
