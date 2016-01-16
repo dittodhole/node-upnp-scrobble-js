@@ -12,6 +12,7 @@ const objectPath = require('object-path');
 const Scribble = require('scribble');
 const handlebars = require('handlebars');
 const fs = require('fs');
+const pd = require('pretty-data2').pd;
 
 const config = require('./config.json');
 
@@ -137,7 +138,7 @@ function handleEvent(data, service) {
         return;
       }
 
-      service.lastMetadata = metadata;
+      service.lastMetadata = pd.xml(metadata);
 
       xmlParser.parseString(metadata, function (error, data) {
         if (error) {
