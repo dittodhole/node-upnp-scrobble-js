@@ -148,7 +148,7 @@ function handleEvent(data, service) {
           service.serviceClient.GetPositionInfo({
             'InstanceID': instanceId
           }, (result) => {
-            const trackDuration = parseDuration(result.TrackDuration);
+            const trackDuration = container.parseDuration(result.TrackDuration);
             if (trackDuration === -1) {
               return;
             }
