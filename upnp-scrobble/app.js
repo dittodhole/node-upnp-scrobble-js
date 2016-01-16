@@ -41,7 +41,6 @@ var container = {
     container.logger.info('Receiving request',
       req.rawHeaders.slice(2, 8));
 
-log.info('Hi');
   }).listen(config.serverPort)
 };
 
