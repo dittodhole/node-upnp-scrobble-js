@@ -64,16 +64,17 @@ function handleService(service) {
     service.USN,
     service.device.modelName);
 
-  service.cancelScrobbling = () => {
+  service.cancelScrobbling = function () {
     clearTimeout(service.scrobbleTimeout);
     service.scrobbleTimeout = null;
   };
 
 
-  service.bind((serviceClient) => {
+  service.bind(function (serviceClient) {
     service.serviceClient = serviceClient;
+  }).on('event', function (data) {
+    handleEvent(data, service);
   });
-  service.on('event', (data) => handleEvent(data, service));
 };
 
 function handleEvent(data, service) {
@@ -88,7 +89,7 @@ function handleEvent(data, service) {
     return;
   }
 
-  xmlParser.parseString(lastChange, (error, data) => {
+  xmlParser.parseString(lastChange, function (error, data) {
     if (error) {
       container.logger.warn(error,
         'Could not parse lastChange',
@@ -125,7 +126,7 @@ function handleEvent(data, service) {
 
       service.lastMetadata = metadata;
 
-      xmlParser.parseString(metadata, (error, data) => {
+      xmlParser.parseString(metadata, function (error, data) {
         if (error) {
           container.logger.error(error,
             'Could not parse metadata',
@@ -147,7 +148,7 @@ function handleEvent(data, service) {
         if (service.serviceClient.GetPositionInfo) {
           service.serviceClient.GetPositionInfo({
             'InstanceID': instanceId
-          }, (result) => {
+          }, function (result) {
             const trackDuration = container.parseDuration(result.TrackDuration);
             if (trackDuration === -1) {
               return;
@@ -159,7 +160,7 @@ function handleEvent(data, service) {
             }
 
             const offset = Math.max(1, trackDuration * 0.8 - relTime) * 1000;
-            service.scrobbleTimeout = setTimeout(() => {
+            service.scrobbleTimeout = setTimeout(function () {
               container.scribble.Scrobble(container.song);
             }, offset);
           });
