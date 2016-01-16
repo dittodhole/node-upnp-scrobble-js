@@ -68,16 +68,7 @@ function handleService(service) {
     clearTimeout(service.scrobbleTimeout);
     service.scrobbleTimeout = null;
   };
-  service.dispose = () => {
-    clearTimeout(service.heartbeatInterval);
-    service.heartbeatInterval = null;
-  };
 
-  service.heartbeatInterval = setInterval(() => {
-    log.info('Still alive',
-      service.USN,
-      service.device.modelName);
-  }, 10 * 1000);
 
   service.bind((serviceClient) => {
     service.serviceClient = serviceClient;
@@ -180,6 +171,5 @@ function handleEvent(data, service) {
 
 function unhandleService(service) {
   service.cancelScrobbling();
-  service.dispose();
   service.removeAllListeners('event');
 };
