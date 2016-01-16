@@ -1,14 +1,45 @@
 ﻿<!DOCTYPE html>
-
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="utf-8" />
-    <title></title>
+  <meta charset="utf-8" />
+  <title></title>
+  <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
 </head>
 <body>
-  {{song}}
-  {{#each remoteDevices}}
-    {{song}}
-  {{/each}}
+  {{#if song}}
+  <h1>Currently playing</h1>
+  <ul>
+    {{#each song}}
+    <li>
+      {{@key}}: {{this}}
+    </li>
+    {{/each}}
+  </ul>
+  <h2>Playing since</h2>
+  {{playingSince}}
+  <h2>Playing until</h2>
+  {{playingUntil}}
+  <h2>Scrobbling at</h2>
+  {{scrobblingAt}}
+  {{/if}}
+  <h2>Connected Devices</h2>
+  <ul>
+    {{#each peer.remoteDevices}}
+    <li>
+      {{this.friendlyName}} ({{this.deviceType}})<br />
+      {{this.modelName}} ({{this.UDN}})
+      <ul>
+        {{#each this.services}}
+        <li>
+          {{this.serviceType}}
+          {{#if this.lastMetadata}}
+          <pre class="prettyprint" style="white-space: pre-wrap"><code class="language-xml">{{this.lastMetadata}}</code></pre>
+          {{/if}}
+        </li>
+        {{/each}}
+      </ul>
+    </li>
+    {{/each}}
+  </ul>
 </body>
 </html>
