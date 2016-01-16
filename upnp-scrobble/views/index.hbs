@@ -7,50 +7,45 @@
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.css">
   <link rel="stylesheet" href="//milligram.github.io/css/milligram.min.css">
 </head>
-<body style="margin: 10px;">
+<body class="container">
   {{#if song}}
-  <h1>Currently playing</h1>
-  <div class="container">
-    <div class="row">
-      <div class="column">
-        <img src="{{song.albumArtURI}}" />
-      </div>
-      <div class="column">
-        {{song.artist}} - {{song.track}} ({{song.album}})
-      </div>
+  <div class="row">
+    <div class="column">
+      <h1>Currently playing</h1>
     </div>
   </div>
-  <!--
-  <ul>
-    {{#each song}}
-    <li>
-      {{@key}}: {{this}}
-    </li>
-    {{/each}}
-    <li>since {{playingSince}}</li>
-    <li>until {{playingUntil}}</li>
-    <li>scrobbling at {{scrobblingAt}}</li>
-  </ul>
-  -->
+  <div class="row">
+    <div class="column">
+      <img src="{{song.albumArtURI}}" />
+    </div>
+    <div class="column">
+      {{song.artist}} - {{song.track}} ({{song.album}})
+    </div>
+  </div>
   {{/if}}
-  <h1>Connected Devices</h1>
-  <ul>
-    {{#each peer.remoteDevices}}
-    <li>
-      {{this.friendlyName}} ({{this.deviceType}})<br />
-      {{this.modelName}} ({{this.UDN}})
-      <ul>
-        {{#each this.services}}
-        <li>
-          {{this.serviceType}}
-          {{#if this.lastMetadata}}
-          <pre><code>{{this.lastMetadata}}</code></pre>
-          {{/if}}
-        </li>
-        {{/each}}
-      </ul>
-    </li>
-    {{/each}}
-  </ul>
+  <div class="row">
+    <div class="column">
+      <h2>Connected devices</h2>
+    </div>
+  </div>
+  {{#each peer.remoteDevices}}
+  <div class="row">
+    <div class="column">
+      <h3>{{this.friendlyName}}</h3>
+    </div>
+  </div>
+  <div class="row">
+    <div class="column">{{this.modelName}}</div>
+    <div class="column">{{this.UDN}}</div>
+  </div>
+  {{#each this.services}}
+  {{#if this.lastMetadata}}
+  <div class="row">
+    <div class="column">{{this.serviceType}}</div>
+    <div class="column"><pre><code>{{this.lastMetadata}}</code></pre></div>
+  </div>
+  {{/if}}
+  {{/each}}
+  {{/each}}
 </body>
 </html>
