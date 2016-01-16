@@ -15,43 +15,43 @@ const config = require('./config.json');
 
 'use strict';
 
-function prettyJson(obj) {
-  return JSON.stringify(obj, null, 2);
-};
+var container = {
+  "parseDuration": function (duration) {
+    if (!duration) {
+      return -1;
+    }
 
-function parseDuration(duration) {
-  if (!duration) {
-    return -1;
-  }
+    const parts = duration.split(':');
+    const seconds = (+parts[0]) * 60 * 60 + (+parts[1]) * 60 + (+parts[2]);
 
-  const parts = duration.split(':');
-  const seconds = (+parts[0]) * 60 * 60 + (+parts[1]) * 60 + (+parts[2]);
-
-  return seconds;
-}
-
-const scribble = new Scribble(config.lastfm.key,
-  config.lastfm.secret,
-  config.lastfm.username,
-  config.lastfm.password);
-
-const log = Bunyan.createLogger({
-  'name': 'upnp-scrobble',
-  'level': config.logLevel
-});
+    return seconds;
+  },
+  "prettyJson": function (obj) {
+    return JSON.stringify(obj, null, 2);
+  },
+  "scribble": new Scribble(config.lastfm.key,
+    config.lastfm.secret,
+    config.lastfm.username,
+    config.lastfm.password),
+  "logger": Bunyan.createLogger({
+    "name": 'upnp-scrobble',
+    "level": config.logLevel
+  }),
+  "server": http.createServer(function (req, res) {
+    container.logger.info('Receiving request',
+      req.rawHeaders.slice(2, 8));
 
 log.info('Hi');
+  }).listen(config.serverPort)
+};
 
-const server = http.createServer(function (req, res) {
-  log.info('Receiving request',
-    req.rawHeaders.slice(2, 8));
-});
-server.listen(config.serverPort);
+container.logger.info('Hi');
 
 upnp.createPeer({
-  'server': server
-}).on('ready', (peer) => {
-  const intervalFn = () => {
+  "server": container.server
+}).on('ready', function (peer) {
+  container.peer = peer;
+  const intervalFn = function () {
     peer.removeListener(config.serviceType, handleService);
     peer.on(config.serviceType, handleService);
   };
@@ -61,7 +61,7 @@ upnp.createPeer({
 }).start();
 
 function handleService(service) {
-  log.info('Found a service',
+  container.logger.info('Found a service',
     service.USN,
     service.device.modelName);
 
@@ -87,20 +87,20 @@ function handleService(service) {
 };
 
 function handleEvent(data, service) {
-  log.info('Received an event from service',
+  container.logger.info('Received an event from service',
     service.USN,
-    prettyJson(data));
+    container.prettyJson(data));
 
   const lastChange = data.LastChange;
   if (!_.isString(lastChange)) {
-    log.warn('LastChange was not of type string',
-      prettyJson(data));
+    container.logger.warn('LastChange was not of type string',
+      container.prettyJson(data));
     return;
   }
 
   xmlParser.parseString(lastChange, (error, data) => {
     if (error) {
-      log.warn(error,
+      container.logger.warn(error,
         'Could not parse lastChange',
         lastChange);
       return;
@@ -108,13 +108,13 @@ function handleEvent(data, service) {
 
     const transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
     if (transportState === 'NO_MEDIA_PRESENT') {
-      log.info('No media present');
+      container.logger.info('No media present');
       service.cancelScrobbling();
       return;
     }
 
     if (transportState === 'PAUSED_PLAYBACK') {
-      log.info('Playback paused');
+      container.logger.info('Playback paused');
       service.cancelScrobbling();
       return;
     }
@@ -122,14 +122,14 @@ function handleEvent(data, service) {
     const metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
     if (transportState === 'PLAYING'
       || metadata) {
-      log.info('Playing');
+      container.logger.info('Playing');
 
       const instanceId = objectPath.get(data, 'Event.InstanceID.val');
 
       metadata = metadata || service.lastMetadata;
       if (!metadata) {
-        log.warn('No metadata inside',
-          prettyJson(data));
+        container.logger.warn('No metadata inside',
+          container.prettyJson(data));
         return;
       }
 
@@ -137,7 +137,7 @@ function handleEvent(data, service) {
 
       xmlParser.parseString(metadata, (error, data) => {
         if (error) {
-          log.error(error,
+          container.logger.error(error,
             'Could not parse metadata',
             metadata);
           return;
@@ -152,7 +152,7 @@ function handleEvent(data, service) {
 
         service.cancelScrobbling();
 
-        scribble.NowPlaying(song);
+        container.scribble.NowPlaying(container.song);
 
         if (service.serviceClient.GetPositionInfo) {
           service.serviceClient.GetPositionInfo({
@@ -163,14 +163,14 @@ function handleEvent(data, service) {
               return;
             }
 
-            const relTime = parseDuration(result.RelTime);
+            const relTime = container.parseDuration(result.RelTime);
             if (relTime === -1) {
               return;
             }
 
             const offset = Math.max(1, trackDuration * 0.8 - relTime) * 1000;
             service.scrobbleTimeout = setTimeout(() => {
-              scribble.Scrobble(song);
+              container.scribble.Scrobble(container.song);
             }, offset);
           });
         }
