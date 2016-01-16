@@ -124,7 +124,7 @@ function handleEvent(data, service) {
       return;
     }
 
-    const metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
+    var metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
     if (transportState === 'PLAYING'
       || metadata) {
       container.logger.info('Playing');
