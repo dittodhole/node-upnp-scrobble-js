@@ -10,12 +10,26 @@
 <body style="margin: 10px;">
   {{#if song}}
   <h1>Currently playing</h1>
+  <div class="container">
+    <div class="row">
+      <div class="column">
+        <img src="{{song.albumArtURI}}" />
+      </div>
+      <div class="column">
+        {{song.artist}} - {{song.track}} ({{song.album}})
+      </div>
+    </div>
+  </div>
+  <!--
   <ul>
     {{#each song}}
     <li>
       {{@key}}: {{this}}
     </li>
     {{/each}}
+    <li>since {{playingSince}}</li>
+    <li>until {{playingUntil}}</li>
+    <li>scrobbling at {{scrobblingAt}}</li>
   </ul>
   -->
   {{/if}}
