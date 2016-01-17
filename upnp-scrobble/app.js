@@ -117,6 +117,9 @@ handlebars.registerHelper('trackPositionInSeconds', function () {
 
   return result;
 });
+handlebars.registerHelper('formatXML', function (data) {
+  return pd.xml(data);
+});
 
 container.logger.info('Hi');
 
@@ -231,7 +234,7 @@ function handleEvent(data, service) {
       }
 
       // TODO move to handlebars helper - this is only relevant to the view
-      service.lastMetadata = pd.xml(metadata);
+      service.lastMetadata = metadata;
 
       xmlParser.parseString(metadata, function (error, data) {
         if (error) {
