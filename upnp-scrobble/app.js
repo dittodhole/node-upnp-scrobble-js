@@ -127,6 +127,8 @@ function handleEvent(data, service) {
       service.cancelScrobbling();
       return;
     }
+    
+    // TODO implement other transportStates
 
     var metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
     if (transportState === 'PLAYING'
