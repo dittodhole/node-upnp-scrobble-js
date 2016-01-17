@@ -18,31 +18,35 @@
     <div class="column">
       <img src="{{song.albumArtURI}}" />
     </div>
+  </div>
+  <div class="row">
     <div class="column">
-      {{song.artist}} - {{song.track}} ({{song.album}})
+      <strong>{{song.track}}</strong><br />
+      {{song.artist}}<br />
+      <small>{{song.album}}</small>
     </div>
   </div>
   {{/if}}
   <div class="row">
     <div class="column">
-      <h2>Connected devices</h2>
+      <h1>Connected devices</h1>
     </div>
   </div>
   {{#each peer.remoteDevices}}
   <div class="row">
     <div class="column">
-      <h3>{{this.friendlyName}}</h3>
+      <strong>{{this.friendlyName}}</strong>
     </div>
   </div>
   <div class="row">
     <div class="column">{{this.modelName}}</div>
-    <div class="column">{{this.UDN}}</div>
   </div>
   {{#each this.services}}
   {{#if this.lastMetadata}}
   <div class="row">
-    <div class="column">{{this.serviceType}}</div>
-    <div class="column"><pre><code>{{this.lastMetadata}}</code></pre></div>
+    <div class="column">
+      <pre><code>{{this.lastMetadata}}</code></pre>
+    </div>
   </div>
   {{/if}}
   {{/each}}
