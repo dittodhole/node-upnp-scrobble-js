@@ -3,9 +3,34 @@
 <head>
   <meta charset="utf-8" />
   <title></title>
-  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.css">
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/milligram/1.0.3/milligram.min.css">
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/milligram/1.0.3/milligram.min.css" />
+  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.1/moment-with-locales.min.js"></script>
+  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/moment-duration-format/1.3.0/moment-duration-format.min.js"></script>
+  {{#if song}}
+  <script type="text/javascript">
+    window.setInterval(function () {
+      var progress = document.getElementById('progress');
+      progress.value += 1;
+      var trackPosition = document.getElementById('trackPosition');
+      trackPosition.textContent = moment.duration(progress.value, 'seconds').format('hh:mm:ss', {
+        "forceLength": true,
+        "trim": false
+      });
+    }, 1 * 1000);
+    window.setTimeout(function () {
+      window.location.reload();
+    }, ({{trackDurationInSeconds}} - {{trackPositionInSeconds}}) * 1000);
+    window.setTimeout(function () {
+      var trackDuration = document.getElementById('trackDuration');
+      trackDuration.textContent = moment.duration({{trackDurationInSeconds}}, 'seconds').format('hh:mm:ss', {
+        "forceLength": true,
+        "trim": false
+      });
+    }, 0);
+  </script>
+  {{/if}}
 </head>
 <body class="container">
   {{#if song}}
@@ -26,6 +51,24 @@
       <strong>{{song.track}}</strong><br />
       {{song.artist}}<br />
       <small>{{song.album}}</small>
+    </div>
+  </div>
+  <div class="row">
+    <div class="column">
+      <progress id="progress"
+                value="{{trackPositionInSeconds}}"
+                max="{{trackDurationInSeconds}}"
+                style="width: 100%;" />
+    </div>
+  </div>
+  <div class="row">
+    <div class="column"
+         style="text-align: left">
+      <span id="trackPosition" />
+    </div>
+    <div class="column"
+         style="text-align: right;">
+      <span id="trackDuration" />
     </div>
   </div>
   {{/if}}

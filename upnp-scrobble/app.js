@@ -19,7 +19,7 @@ const config = require('./config.json');
 'use strict';
 
 var container = {
-  "parseDuration": function (duration) {
+  "getDurationInSeconds": function (duration) {
     if (!duration) {
       return -1;
     }
@@ -108,6 +108,16 @@ var container = {
   }
 };
 
+handlebars.registerHelper('trackPositionInSeconds', function () {
+  if (!container.playingSince) {
+    return 0;
+  }
+  const offset = container.trackDurationInSeconds - (container.playingUntil - container.playingSince) / 1000;
+  const result = (Date.now() - container.playingSince) / 1000 + offset;
+
+  return result;
+});
+
 container.logger.info('Hi');
 
 function joinUpnpNetwork() {
@@ -140,6 +150,7 @@ function handleService(service) {
 
   service.clearScrobbleSongTimeout = function () {
     container.song = null;
+    container.trackDurationInSeconds = null;
     container.playingSince = null;
     container.playingUntil = null;
     container.scrobblingAt = null;
@@ -241,32 +252,30 @@ function handleEvent(data, service) {
         };
 
         container.scribble.NowPlaying(container.song);
-        container.playingSince = new Date();
+        container.playingSince = Date.now();
 
         if (service.serviceClient.GetPositionInfo) {
           service.serviceClient.GetPositionInfo({
             'InstanceID': instanceId
           }, function (result) {
-            const trackDuration = container.parseDuration(result.TrackDuration);
-            if (trackDuration === -1) {
+            container.trackDurationInSeconds = container.getDurationInSeconds(result.TrackDuration);
+            if (container.trackDurationInSeconds === -1) {
               return;
             }
 
-            const currentTrackPosition = container.parseDuration(result.RelTime);
-            if (currentTrackPosition === -1) {
+            const trackPositionInSeconds = container.getDurationInSeconds(result.RelTime);
+            if (trackPositionInSeconds === -1) {
               return;
             }
 
-            const remainingTrackDuration = trackDuration - currentTrackPosition;
+            const remainingTrackDurationInSeconds = container.trackDurationInSeconds - trackPositionInSeconds;
 
-            container.playingUntil = new Date();
-            container.playingUntil.setSeconds(container.playingUntil.getSeconds() + remainingTrackDuration);
+            container.playingUntil = container.playingSince + (remainingTrackDurationInSeconds * 1000);
 
-            const scrobbleSongOffset = Math.max(1, trackDuration * 0.8 - currentTrackPosition) * 1000;
+            const scrobbleSongOffset = Math.max(1, container.trackDurationInSeconds * 0.8 - trackPositionInSeconds) * 1000;
             service.scrobbleSongTimeout = setTimeout(container.scrobbleSong, scrobbleSongOffset);
 
-            container.scrobblingAt = new Date();
-            container.scrobblingAt.setTime(container.scrobblingAt.getTime() + scrobbleSongOffset);
+            container.scrobblingAt = container.playingSince + scrobbleSongOffset;
           });
         }
       });
