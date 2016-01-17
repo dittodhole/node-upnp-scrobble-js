@@ -10,16 +10,20 @@
   <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/moment-duration-format/1.3.0/moment-duration-format.min.js"></script>
   {{#if song}}
   <script type="text/javascript">
+    var initTimestamp = Date.now();
     var progressInterval = window.setInterval(function () {
+      var position = {{trackPositionInSeconds}} + (Date.now() - initTimestamp) / 1000;
+
       var progress = document.getElementById('progress');
-      progress.value += 1;
+      progress.value = position;
+
       var trackPosition = document.getElementById('trackPosition');
-      trackPosition.textContent = moment.duration(progress.value, 'seconds').format('hh:mm:ss', {
+      trackPosition.textContent = moment.duration(position, 'seconds').format('hh:mm:ss', {
         "forceLength": true,
         "trim": false
       });
 
-      if (progress.value >= {{trackDurationInSeconds}}){
+      if (position >= {{trackDurationInSeconds}}){
         window.clearInterval(progressInterval);
         window.setTimeout(function () {
           window.location.reload();
