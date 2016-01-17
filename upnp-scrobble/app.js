@@ -80,6 +80,10 @@ function handleService(service) {
     service.device.modelName);
 
   service.cancelScrobbling = function () {
+    container.song = null;
+    container.playingSince = null;
+    container.playingUntil = null;
+    container.scrobblingAt = null;
     clearTimeout(service.scrobbleTimeout);
     service.scrobbleTimeout = null;
   };
@@ -148,6 +152,8 @@ function handleEvent(data, service) {
           return;
         }
 
+        service.cancelScrobbling();
+        
         container.song = {
           "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
           "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
@@ -155,8 +161,6 @@ function handleEvent(data, service) {
           "duration": objectPath.get(data, 'DIDL-Lite.item.res.duration'),
           "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._')
         };
-
-        service.cancelScrobbling();
 
         container.scribble.NowPlaying(container.song);
         container.playingSince = new Date();
