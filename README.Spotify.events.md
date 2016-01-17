@@ -245,7 +245,8 @@ This document describes the upnp events that are triggered for specific operatio
 ### Event (2)
 ```
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<BufferFilled>-1258803906</BufferFilled>```
+<BufferFilled>-1258803906</BufferFilled>
+```
 
 # 7. Another track
 
