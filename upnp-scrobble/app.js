@@ -4,9 +4,9 @@ const upnp = require('peer-upnp');
 const _ = require('underscore');
 const xml2js = require('xml2js');
 const xmlParser = new xml2js.Parser({
-  'mergeAttrs': true,
-  'explicitArray': false,
-  'ignoreXmlns': true
+  "mergeAttrs": true,
+  "explicitArray": false,
+  "ignoreXmlns": true
 });
 const objectPath = require('object-path');
 const Scribble = require('scribble');
