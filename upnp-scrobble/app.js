@@ -21,6 +21,11 @@ const config = require('./config.json');
 handlebars.registerHelper('formatXML', function (data) {
   return pd.xml(data);
 });
+handlebars.registerHelper('formatTime', function (time) {
+  if (time) {
+    return new Date(time).toISOString();
+  }
+});
 
 var container = {
   "scribble": new Scribble(config.lastfm.key, config.lastfm.secret, config.lastfm.username, config.lastfm.password),
@@ -156,6 +161,7 @@ function joinUpnpNetwork() {
 };
 
 function handleService(service) {
+  service.device.discoveryTime = Date.now();
   service.device.song = null;
   service.device.scrobbleSongTimeout = null;
   service.device.clearScrobbleSongTimeout = function () {

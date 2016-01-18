@@ -34,7 +34,8 @@
     </div>
     <div class="column">
       <strong>{{this.friendlyName}}</strong><br />
-      {{this.modelName}}
+      {{this.modelName}}<br/>
+      <small>Discovered at {{formatTime this.discoveryTime}}</small>
     </div>
     {{#if this.song}}
     <script type="text/javascript">
