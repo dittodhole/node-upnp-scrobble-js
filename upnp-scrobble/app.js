@@ -139,7 +139,7 @@ function handleEvent(data, service) {
   if (!_.isString(complexEvent.change)) {
     // TODO add logging
     return;
-  }
+  };
 
   xmlParser.parseString(complexEvent.change, function (error, data) {
     if (error) {
