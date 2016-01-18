@@ -102,7 +102,7 @@ var container = {
     service.clearResetPeerTimeout();
 
     const resetPeerOffset = this.getRemainingTimeFromTimeout(service.timeoutHandle, service.initTimestamp) + 5 * 1000;
-    service.resetPeerTimeout = setTimeout(this.resetPeer, resetPeerOffset);
+    service.resetPeerTimeout = setTimeout(_.bind(this.resetPeer, this), resetPeerOffset);
   },
   "getRemainingTimeFromTimeout": function (timeout, fallbackTimestamp) {
     var idleStart = timeout._idleStart;
