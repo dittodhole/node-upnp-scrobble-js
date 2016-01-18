@@ -175,10 +175,10 @@ function handleEvent(data, service) {
             "timestamp": Date.now()
           };
 
-            container.nowPlaying(service, complexEvent.instanceId);
+          container.nowPlaying(service, complexEvent.instanceId);
         });
       } else {
-          container.nowPlaying(service, complexEvent.instanceId);
+        container.nowPlaying(service, complexEvent.instanceId);
       }
     }
     else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
