@@ -83,9 +83,9 @@ var container = {
       song.relativeScrobbleOffsetInSeconds = Math.max(1, song.absoluteScrobbleOffsetInSeconds - song.positionInSeconds);
 
       service.device.clearScrobbleSongTimeout();
-      service.device.scrobbleSongTimeout = setTimeout(function () {
+      service.device.scrobbleSongTimeout = setTimeout(_.bind(function () {
         this.scribble.Scrobble(song);
-      }, song.relativeScrobbleOffsetInSeconds * 1000);
+      }, this), song.relativeScrobbleOffsetInSeconds * 1000);
     }, this));
   },
   "enqueueResetPeerTimeout": function (service) {
