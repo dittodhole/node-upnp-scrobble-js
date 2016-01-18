@@ -73,22 +73,20 @@ var container = {
 
     song.durationInSeconds = this.getSeconds(song.duration);
 
-    const that = this;
-
     service.serviceClient.GetPositionInfo({
       "InstanceID": instanceId
-    }, function (result) {
-      song.durationInSeconds = that.getSeconds(result.TrackDuration);
-      song.positionInSeconds = that.getSeconds(result.RelTime);
+    }, _.bind(function (result) {
+      song.durationInSeconds = this.getSeconds(result.TrackDuration);
+      song.positionInSeconds = this.getSeconds(result.RelTime);
       song.timestamp = Date.now();
       song.absoluteScrobbleOffsetInSeconds = song.durationInSeconds * 0.8;
       song.relativeScrobbleOffsetInSeconds = Math.max(1, song.absoluteScrobbleOffsetInSeconds - song.positionInSeconds);
 
       service.device.clearScrobbleSongTimeout();
       service.device.scrobbleSongTimeout = setTimeout(function () {
-        that.scribble.Scrobble(song);
+        this.scribble.Scrobble(song);
       }, song.relativeScrobbleOffsetInSeconds * 1000);
-    });
+    }, this));
   },
   "enqueueResetPeerTimeout": function (service) {
     // this timeout kicks in 5 seconds after there should be an
