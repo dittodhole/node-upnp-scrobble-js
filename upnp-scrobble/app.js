@@ -71,8 +71,9 @@ var container = {
     }, function (result) {
       song.durationInSeconds = container.getSeconds(result.TrackDuration);
       song.positionInSeconds = container.getSeconds(result.RelTime);
+      song.scrobbleOffsetInSeconds = song.durationInSeconds * 0.8;
       song.timestamp = Date.now();
-      song.scrobbleOffsetInSeconds = Math.max(1, song.durationInSeconds * 0.8 - song.positionInSeconds);
+      song.scrobbleOffsetInSeconds = Math.max(1, song.scrobbleOffsetInSeconds - song.positionInSeconds);
 
       service.clearScrobbleSongTimeout();
       service.scrobbleSongTimeout = setTimeout(function () {

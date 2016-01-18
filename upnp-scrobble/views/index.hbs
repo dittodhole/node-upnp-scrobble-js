@@ -9,21 +9,23 @@
   <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.1/moment-with-locales.min.js"></script>
   <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/moment-duration-format/1.3.0/moment-duration-format.min.js"></script>
   <style type="text/css">
-    progress {
-      -webkit-appearance: none;
+    meter {
+      -webkit-appearance:+1: none;
     }
 
-      progress::-webkit-progress-bar {
+      meter::-webkit-meter-bar {
         background: transparent;
       }
 
-      progress::-webkit-progress-value {
+      meter::-webkit-meter-suboptimal-value,
+      meter::-webkit-meter-optimum-value,
+      meter::-webkit-meter-even-less-good-value {
         opacity: 0.3;
         -webkit-transition: 3s linear;
       }
   </style>
   <script type="text/javascript">
-    var progressIntervals = {};
+    var meterIntervals = {};
   </script>
 </head>
 <body class="container">
@@ -38,26 +40,28 @@
     </div>
     {{#if this.song}}
     <script type="text/javascript">
-      progressIntervals['{{this.UDN}}'] = window.setInterval(function () {
+        meterIntervals['{{this.UDN}}'] = window.setInterval(function () {
         var position = (Date.now() - {{this.song.timestamp}}) / 1000 + {{this.song.positionInSeconds}};
         if (position >= {{this.song.durationInSeconds}}) {
-          window.clearInterval(progressIntervals['{{this.UDN}}']);
-          progressIntervals['{{this.UDN}}'] = null;
+          window.clearInterval(meterIntervals['{{this.UDN}}']);
+          meterIntervals['{{this.UDN}}'] = null;
           window.setTimeout(function () {
             window.location.reload();
           }, 2 * 1000);
         }
 
-        var progress = document.getElementById('{{this.UDN}}-progress');
-        progress.value = position;
+        var meter = document.getElementById('{{this.UDN}}-meter');
+        meter.value = position;
       }, 1 * 1000);
     </script>
     <div class="column"
          style="text-align: right; position: relative;">
-      <progress id="{{this.UDN}}-progress"
-                value="{{this.song.positionInSeconds}}"
-                max="{{this.song.durationInSeconds}}"
-                style="position: absolute; width: 300px; height: 300px;"></progress>
+      <meter id="{{this.UDN}}-meter"
+             value="{{this.song.positionInSeconds}}"
+             max="{{this.song.durationInSeconds}}"
+             low="{{this.song.scrobbleOffsetInSeconds}}"
+             optimum="{{this.song.scrobbleOffsetInSeconds}}"
+             style="position: absolute; width: 300px; height: 300px;"></meter>
       <img src="{{this.song.albumArtURI}}"
            style="width: 300px; height: 300px;" />
     </div>
