@@ -182,7 +182,10 @@ function handleEvent(data, service) {
       }
     }
     else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
-      service.clearScrobbleSongTimeout();
+      service.clearSong();
+    }
+    else if (complexEvent.transportState === 'NO_MEDIA_PRESENT') {
+      service.clearSong();
     }
   });
 };
