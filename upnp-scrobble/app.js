@@ -149,7 +149,6 @@ function handleEvent(data, service) {
   xmlParser.parseString(lastChange, function (error, data) {
     if (error) {
       // TODO add logging
-      service.lastMetadata = null;
       return;
     }
 
