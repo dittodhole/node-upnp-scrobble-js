@@ -62,11 +62,13 @@ var container = {
 
     song.durationInSeconds = this.getSeconds(song.duration);
 
+    const that = this;
+
     service.serviceClient.GetPositionInfo({
       "InstanceID": instanceId
     }, function (result) {
-      song.durationInSeconds = this.getSeconds(result.TrackDuration);
-      song.positionInSeconds = this.getSeconds(result.RelTime);
+      song.durationInSeconds = that.getSeconds(result.TrackDuration);
+      song.positionInSeconds = that.getSeconds(result.RelTime);
       song.timestamp = Date.now();
       song.absoluteScrobbleOffsetInSeconds = song.durationInSeconds * 0.8;
       song.relativeScrobbleOffsetInSeconds = Math.max(1, song.absoluteScrobbleOffsetInSeconds - song.positionInSeconds);
@@ -75,7 +77,7 @@ var container = {
       service.device.scrobbleSongTimeout = setTimeout(function () {
         this.scribble.Scrobble(song);
       }, song.relativeScrobbleOffsetInSeconds * 1000);
-    }).bind(this);
+    });
   }
 };
 
