@@ -103,7 +103,7 @@ function handleService(service) {
   service.device.clearScrobbleSongTimeout = function () {
     clearTimeout(this.scrobbleSongTimeout);
     this.scrobbleSongTimeout = null;
-  }
+  };
   service.device.clearSong = function () {
     this.clearScrobbleSongTimeout();
     this.song = null;
