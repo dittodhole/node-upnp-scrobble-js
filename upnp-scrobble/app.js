@@ -40,7 +40,12 @@ var container = {
     }).listen(config.serverPort),
   "peer": null,
   "unhandleService": function (service) {
-    service.device.clearSong();
+    if (service.clearResetPeerTimeout){
+      service.clearResetPeerTimeout();
+    }
+    if (service.device.clearSong) {
+      service.device.clearSong();
+    }
     service.removeAllListeners('event');
   },
   "getSeconds": function (duration) {
@@ -111,10 +116,7 @@ var container = {
     const that = this;
     _.each(this.peer.remoteDevices, function (remoteDevice) {
       _.each(remoteDevice.services, function (service) {
-        if (service.clearResetPeerTimeout) {
-          service.clearResetPeerTimeout();
           that.unhandleService(service);
-        }
       });
     });
 
