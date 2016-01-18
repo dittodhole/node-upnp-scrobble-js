@@ -56,11 +56,29 @@ var container = {
 
     return seconds;
   },
-  "scrobbleSong": function (song) {
-    if (!container.scribble) {
+  "nowPlaying": function (service) {
+    const song = service.device.song;
+    if (!song) {
       return;
     }
-    container.scribble.Scrobble(song);
+
+    container.scribble.NowPlaying(song);
+
+    song.durationInSeconds = container.getSeconds(song.duration);
+
+    service.serviceClient.GetPositionInfo({
+      "InstanceID": "foo"
+    }, function (result) {
+      song.durationInSeconds = container.getSeconds(result.TrackDuration);
+      song.positionInSeconds = container.getSeconds(result.RelTime);
+      song.timestamp = Date.now();
+      song.scrobbleOffsetInSeconds = Math.max(1, song.durationInSeconds * 0.8 - song.positionInSeconds);
+
+      service.clearScrobbleSongTimeout();
+      service.scrobbleSongTimeout = setTimeout(function () {
+        container.scribble.Scrobble(song);
+      }, song.scrobbleOffsetInSeconds * 1000);
+    });
   }
 };
 
@@ -83,9 +101,13 @@ function joinUpnpNetwork() {
 };
 
 function handleService(service) {
-  service.clearSong = function () {
+  service.clearScrobbleSongTimeout = function () {
     clearTimeout(service.scrobbleSongTimeout);
     service.scrobbleSongTimeout = null;
+  }
+  service.clearSong = function () {
+    service.clearScrobbleSongTimeout();
+    service.device.song = null;
   };
 
   service.eventQueue = {
@@ -130,45 +152,38 @@ function handleEvent(data, service) {
       return;
     }
 
+    complexEvent.transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
     complexEvent.metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
-    if (!complexEvent.metadata) {
-      return;
-    }
-
     complexEvent.instanceId = objectPath.get(data, 'Event.InstanceID.val');
 
-    xmlParser.parseString(complexEvent.metadata, function (error, data) {
-      if (error) {
-        // TODO add logging
-        return;
+    if (complexEvent.transportState === 'PLAYING'
+      || !complexEvent.transportState) {
+      if (complexEvent.metadata) {
+        xmlParser.parseString(complexEvent.metadata, function (error, data) {
+          if (error) {
+            // TODO add logging
+            return;
+          }
+
+          service.device.song = {
+            "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
+            "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
+            "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
+            "duration": objectPath.get(data, 'DIDL-Lite.item.res.duration'),
+            "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._'),
+            "durationInSeconds": 0,
+            "positionInSeconds": 0
+          };
+
+          container.nowPlaying(service);
+        });
+      } else {
+        container.nowPlaying(service);
       }
-
-      service.device.song = {
-        "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
-        "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
-        "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
-        "duration": objectPath.get(data, 'DIDL-Lite.item.res.duration'),
-        "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._'),
-        "durationInSeconds": 0,
-        "positionInSeconds": 0
-      };
-
-      container.scribble.NowPlaying(service.device.song);
-      
-      service.device.song.durationInSeconds = container.getSeconds(service.device.song.duration);
-
-      service.serviceClient.GetPositionInfo({
-        "InstanceID": complexEvent.instanceId
-      }, function (result) {
-        service.device.song.durationInSeconds = container.getSeconds(result.TrackDuration);
-        service.device.song.positionInSeconds = container.getSeconds(result.RelTime);
-        service.device.song.timestamp = Date.now();
-        service.device.song.scrobbleOffsetInSeconds = Math.max(1, service.device.song.durationInSeconds * 0.8 - service.device.song.positionInSeconds);
-        service.scrobbleSongTimeout = setTimeout(function () {
-          container.scrobbleSong(service.device.song);
-        }, service.device.song.scrobbleOffsetInSeconds * 1000);
-      });
-    });
+    }
+    else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
+      service.clearScrobbleSongTimeout();
+    }
   });
 };
 
