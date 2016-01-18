@@ -26,18 +26,17 @@ var container = {
   "scribble": new Scribble(config.lastfm.key, config.lastfm.secret, config.lastfm.username, config.lastfm.password),
   "server": http.createServer()
     .on('request', function (req, res) {
-      if (req.url !== '/') {
-        return;
+      // TODO maybe use express to define routes more easily - but does that work with peer-upnp, which expects a server?
+      if (req.url === '/') {
+        const source = fs.readFileSync('views/index.hbs', 'utf-8');
+        const template = handlebars.compile(source);
+        const html = template(container);
+        res.writeHead(200, {
+            "Content-Type": 'text/html'
+        });
+        res.write(html);
+        res.end();
       }
-
-      const source = fs.readFileSync('views/index.hbs', 'utf-8');
-      const template = handlebars.compile(source);
-      const html = template(container);
-      res.writeHead(200, {
-        "Content-Type": 'text/html'
-      });
-      res.write(html);
-      res.end();
     }).listen(config.serverPort),
   "unhandleService": function (service) {
     service.device.clearSong();
@@ -143,7 +142,6 @@ function handleEvent(data, service) {
 
   complexEvent.change = lastChange;
 
-  xmlParser.parseString(lastChange, function (error, data) {
     if (error) {
       // TODO add logging
       return;
