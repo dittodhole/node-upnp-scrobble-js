@@ -56,7 +56,7 @@ var container = {
 
     return seconds;
   },
-  "nowPlaying": function (service) {
+  "nowPlaying": function (service, instanceId) {
     const song = service.device.song;
     if (!song) {
       return;
@@ -67,7 +67,7 @@ var container = {
     song.durationInSeconds = container.getSeconds(song.duration);
 
     service.serviceClient.GetPositionInfo({
-      "InstanceID": "foo"
+      "InstanceID": instanceId
     }, function (result) {
       song.durationInSeconds = container.getSeconds(result.TrackDuration);
       song.positionInSeconds = container.getSeconds(result.RelTime);
@@ -176,10 +176,12 @@ function handleEvent(data, service) {
             "positionInSeconds": 0
           };
 
-          container.nowPlaying(service);
+            container.nowPlaying(service,
+                complexEvent.instanceId);
         });
       } else {
-        container.nowPlaying(service);
+          container.nowPlaying(service,
+              complexEvent.instanceId);
       }
     }
     else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
