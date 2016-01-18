@@ -75,10 +75,9 @@
     </div>
     {{/if}}
   </div>
-  <!--
   {{#each this.services}}
   {{#each this.eventQueue._store}}
-  <h3>{{this.timestamp}}</h3>
+  <strong>{{formatTime this.timestamp}}</strong>
   {{#if this.event}}
   <div class="row">
     <div class="column">
@@ -102,7 +101,6 @@
   {{/if}}
   {{/each}}
   {{/each}}
-  -->
   {{/each}}
 </body>
 </html>

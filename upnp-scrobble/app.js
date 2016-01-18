@@ -180,14 +180,14 @@ function handleService(service) {
   };
   service.eventQueue = {
     "_store": [],
-    "_maxLength": 8,
+    "_maxLength": 4,
     "enqueue": function (obj) {
       this._store.push(obj);
       if (this._store.length > this._maxLength) {
         this._store.shift();
       }
     }
-    };
+  };
 
   service.serviceClient = null;
   service.bind(function (serviceClient) {
