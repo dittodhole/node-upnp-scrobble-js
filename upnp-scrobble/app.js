@@ -38,6 +38,7 @@ var container = {
         res.end();
       }
     }).listen(config.serverPort),
+  "peer": null,
   "unhandleService": function (service) {
     service.device.clearSong();
     service.removeAllListeners('event');
@@ -78,6 +79,59 @@ var container = {
         that.scribble.Scrobble(song);
       }, song.relativeScrobbleOffsetInSeconds * 1000);
     });
+  },
+  "enqueueResetPeerTimeout": function (service) {
+    // this timeout kicks in 5 seconds after there should be an
+    // incoming event, and is reset if there is one. there should be
+    // either an incoming event based on a subscription or
+    // as a response to the renewal request.
+    // so essentially, this timeout checks if the connection
+    // to the subscription of events (of the service) is lost over
+    // time or not. if so, it resets peer-upnp completely.
+
+    service.clearResetPeerTimeout();
+
+    const resetPeerOffset = this.getRemainingTimeFromTimeout(service.timeoutHandle, service.initTimestamp) + 5 * 1000;
+    service.resetPeerTimeout = setTimeout(this.resetPeer, resetPeerOffset);
+  },
+  "getRemainingTimeFromTimeout": function (timeout, fallbackTimestamp) {
+    var idleStart = timeout._idleStart;
+    if (idleStart < fallbackTimestamp) {
+      idleStart += fallbackTimestamp;
+    }
+
+    const idleTimeout = timeout._idleTimeout;
+    const remainingTime = idleStart + idleTimeout - Date.now();
+
+    return remainingTime;
+  },
+  "resetPeer": function () {
+    this.clearScanTimeout();
+
+    const that = this;
+    _.each(this.peer.remoteDevices, function (remoteDevice) {
+      _.each(remoteDevice.services, function (service) {
+        if (service.clearResetPeerTimeout) {
+          service.clearResetPeerTimeout();
+          that.unhandleService(service);
+        }
+      });
+    });
+
+    if (this.peer){
+      this.peer.close();
+      this.peer = null;
+    }
+
+    // forcing a fresh upnp-discovery in 5 seconds (for a clean stack)
+    setTimeout(joinUpnpNetwork, 5 * 1000);
+  },
+  "scanTimeout": null,
+  "clearScanTimeout": function () {
+    if (this.scanTimeout) {
+      clearTimeout(this.scanTimeout);
+      this.scanTimeout = null;
+    }
   }
 };
 
@@ -100,6 +154,8 @@ function joinUpnpNetwork() {
 };
 
 function handleService(service) {
+  service.device.song = null;
+  service.device.scrobbleSongTimeout = null;
   service.device.clearScrobbleSongTimeout = function () {
     clearTimeout(this.scrobbleSongTimeout);
     this.scrobbleSongTimeout = null;
@@ -108,7 +164,14 @@ function handleService(service) {
     this.clearScrobbleSongTimeout();
     this.song = null;
   };
-
+  service.initTimestamp = Date.now();
+  service.resetPeerTimeout = null;
+  service.clearResetPeerTimeout = function () {
+    if (this.resetPeerTimeout) {
+      clearTimeout(this.resetPeerTimeout);
+      this.resetPeerTimeout = null;
+    }
+  };
   service.eventQueue = {
     "_store": [],
     "_maxLength": 8,
@@ -118,8 +181,9 @@ function handleService(service) {
         this._store.shift();
       }
     }
-  };
+    };
 
+  service.serviceClient = null;
   service.bind(function (serviceClient) {
     service.serviceClient = serviceClient;
   }).on('event', function (data) {
@@ -128,6 +192,8 @@ function handleService(service) {
 };
 
 function handleEvent(data, service) {
+  container.enqueueResetPeerTimeout(service);
+
   const complexEvent = {
     "timestamp": Date.now(),
     "change": data.LastChange,
@@ -139,7 +205,7 @@ function handleEvent(data, service) {
   if (!_.isString(complexEvent.change)) {
     // TODO add logging
     return;
-  };
+  }
 
   xmlParser.parseString(complexEvent.change, function (error, data) {
     if (error) {
