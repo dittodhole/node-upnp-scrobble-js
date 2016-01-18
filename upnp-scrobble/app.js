@@ -128,20 +128,18 @@ function handleService(service) {
 function handleEvent(data, service) {
   const complexEvent = {
     "timestamp": Date.now(),
-    "change": null,
+    "change": data.LastChange,
     "event": builder.buildObject(data),
     "metadata": null
   };
   service.eventQueue.enqueue(complexEvent);
 
-  const lastChange = data.LastChange;
-  if (!_.isString(lastChange)) {
+  if (!_.isString(complexEvent.change)) {
     // TODO add logging
     return;
   }
 
-  complexEvent.change = lastChange;
-
+  xmlParser.parseString(complexEvent.change, function (error, data) {
     if (error) {
       // TODO add logging
       return;
