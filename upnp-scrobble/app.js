@@ -50,7 +50,7 @@ var container = {
     if (service.clearResetPeerTimeout){
       service.clearResetPeerTimeout();
     }
-    if (service.device.clearSong) {
+    if (service.device.clear) {
       service.device.clearSong();
     }
     service.removeAllListeners('event');
@@ -65,8 +65,7 @@ var container = {
 
     return seconds;
   },
-  "nowPlaying": function (service, instanceId) {
-    const song = service.device.song;
+  "nowPlaying": function (service, instanceId, song) {
     if (!song) {
       return;
     }
@@ -78,6 +77,19 @@ var container = {
     service.serviceClient.GetPositionInfo({
       "InstanceID": instanceId
     }, _.bind(function (result) {
+      if (!result.TrackDuration) {
+        return;
+      }
+      if (result.TrackDuration === 'NOT_IMPLEMENTED') {
+        return;
+      }
+      if (!result.RelTime) {
+        return;
+      }
+      if (result.RelTime === 'NOT_IMPLEMENTED') {
+        return;
+      }
+
       song.durationInSeconds = this.getSeconds(result.TrackDuration);
       song.positionInSeconds = this.getSeconds(result.RelTime);
       song.timestamp = Date.now();
@@ -88,6 +100,8 @@ var container = {
       service.device.scrobbleSongTimeout = setTimeout(_.bind(function () {
         this.scribble.Scrobble(song);
       }, this), song.relativeScrobbleOffsetInSeconds * 1000);
+
+      service.device.song = song;
     }, this));
   },
   "enqueueResetPeerTimeout": function (service) {
@@ -226,7 +240,8 @@ function handleEvent(data, service) {
     complexEvent.instanceId = objectPath.get(data, 'Event.InstanceID.val');
 
     if (!complexEvent.transportState
-      || complexEvent.transportState === 'PLAYING') {
+      || complexEvent.transportState === 'PLAYING'
+      || complexEvent.transportState === 'TRANSITIONING') {
       if (complexEvent.metadata) {
         xmlParser.parseString(complexEvent.metadata, function (error, data) {
           if (error) {
@@ -234,7 +249,7 @@ function handleEvent(data, service) {
             return;
           }
 
-          service.device.song = {
+          const song = {
             "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
             "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
             "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album') || objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
@@ -246,10 +261,10 @@ function handleEvent(data, service) {
             "timestamp": Date.now()
           };
 
-          container.nowPlaying(service, complexEvent.instanceId);
+          container.nowPlaying(service, complexEvent.instanceId, song);
         });
       } else {
-        container.nowPlaying(service, complexEvent.instanceId);
+        container.nowPlaying(service, complexEvent.instanceId, service.device.song);
       }
     }
     else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {

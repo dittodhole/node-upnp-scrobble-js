@@ -32,18 +32,31 @@
       {{#if song}}
       <script type="text/javascript">
         meterIntervals['{{this.UDN}}'] = window.setInterval(function () {
-        var position = (Date.now() - {{this.song.timestamp}}) / 1000 + {{this.song.positionInSeconds}};
-        if (position >= {{this.song.durationInSeconds}}) {
-          window.clearInterval(meterIntervals['{{this.UDN}}']);
-          meterIntervals['{{this.UDN}}'] = null;
-          window.setTimeout(function () {
-            window.location.reload();
-          }, 2 * 1000);
-        }
+          var songTimestamp = {{this.song.timestamp}};
+          if (!songTimestamp) {
+            window.clearInterval(meterIntervals['{{this.UDN}}']);
+            meterIntervals['{{this.UDN}}'] = null;
+          }
 
-        var meter = document.getElementById('{{this.UDN}}-meter');
-        meter.value = position;
-      }, 1 * 1000);
+          var durationInSeconds = {{this.song.durationInSeconds}};
+          if (!durationInSeconds) {
+            window.clearInterval(meterIntervals['{{this.UDN}}']);
+            meterIntervals['{{this.UDN}}'] = null;
+          }
+
+          var positionInSeconds = {{this.song.positionInSeconds}};
+          var position = (Date.now() - songTimestamp) / 1000 + positionInSeconds;
+          if (position >= durationInSeconds) {
+            window.clearInterval(meterIntervals['{{this.UDN}}']);
+            meterIntervals['{{this.UDN}}'] = null;
+            window.setTimeout(function () {
+              window.location.reload();
+            }, 2 * 1000);
+          }
+
+          var meter = document.getElementById('{{this.UDN}}-meter');
+          meter.value = position;
+        }, 1 * 1000);
       </script>
       <div class="float-right"
            style="margin-left: 10px; text-align: right;">
