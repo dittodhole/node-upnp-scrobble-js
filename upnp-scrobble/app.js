@@ -1,5 +1,4 @@
-﻿const Bunyan = require('bunyan');
-const http = require('http');
+﻿const http = require('http');
 const upnp = require('peer-upnp');
 const _ = require('underscore');
 const xml2js = require('xml2js');
@@ -8,6 +7,7 @@ const xmlParser = new xml2js.Parser({
   "explicitArray": false,
   "ignoreXmlns": true
 });
+const builder = new xml2js.Builder();
 const objectPath = require('object-path');
 const Scribble = require('scribble');
 const handlebars = require('handlebars');
@@ -18,33 +18,18 @@ const config = require('./config.json');
 
 'use strict';
 
+handlebars.registerHelper('formatXML', function (data) {
+  return pd.xml(data);
+});
+
 var container = {
-  "getDurationInSeconds": function (duration) {
-    if (!duration) {
-      return -1;
-    }
-
-    const parts = duration.split(':');
-    const seconds = (+parts[0]) * 60 * 60 + (+parts[1]) * 60 + (+parts[2]);
-
-    return seconds;
-  },
-  "prettyJson": function (obj) {
-    return JSON.stringify(obj, null, 2);
-  },
   "scribble": new Scribble(config.lastfm.key,
     config.lastfm.secret,
     config.lastfm.username,
     config.lastfm.password),
-  "logger": Bunyan.createLogger({
-    "name": 'upnp-scrobble',
-    "level": config.logLevel
-  }),
   "server": http.createServer()
     .on('request', function (req, res) {
       if (req.url !== '/') {
-        container.logger.info('Receiving request',
-          req.rawHeaders.slice(2, 8));
         return;
       }
 
@@ -58,78 +43,17 @@ var container = {
       res.end();
     }).listen(config.serverPort),
   "unhandleService": function (service) {
-    container.logger.info('removing service',
-      {
-        "USN": service.USN
-      });
-
-    service.clearScrobbleSongTimeout();
+    service.clearSong();
     service.removeAllListeners('event');
-  },
-  "resetPeer": function () {
-    container.logger.info('resetting peer');
-    clearTimeout(container.scanTimeout);
-    container.scanTimeout = null;
-
-    // as peer-upnp offers no functionality to remove one service explicitly,
-    // we have to close the peer, and force a fresh upnp-discovery
-    _.each(container.peer.remoteDevices, function (remoteDevice) {
-      _.each(remoteDevice.services, function (service) {
-        if (service.clearScrobbleSongTimeout) {
-          container.unhandleService(service);
-        }
-      });
-    });
-
-    container.peer.close();
-    container.peer = null;
-
-    // forcing a fresh upnp-discovery in 5 seconds (for a clean stack)
-    setTimeout(joinUpnpNetwork, 5 * 1000);
-  },
-  "scrobbleSong": function () {
-    if (!container.scribble) {
-      return;
-    }
-    if (!container.song) {
-      return;
-    }
-    container.scribble.Scrobble(container.song);
-  },
-  "getRemainingTimeFromTimeout": function (timeout, fallbackTimestamp) {
-    var idleStart = timeout._idleStart;
-    if (idleStart < fallbackTimestamp) {
-      idleStart += fallbackTimestamp;
-    }
-    const idleTimeout = timeout._idleTimeout;
-    const remainingTime = idleStart + idleTimeout - Date.now();
-
-    return remainingTime;
   }
 };
 
-handlebars.registerHelper('trackPositionInSeconds', function () {
-  if (!container.playingSince) {
-    return 0;
-  }
-  const offset = container.trackDurationInSeconds - (container.playingUntil - container.playingSince) / 1000;
-  const result = (Date.now() - container.playingSince) / 1000 + offset;
-
-  return result;
-});
-handlebars.registerHelper('formatXML', function (data) {
-  return pd.xml(data);
-});
-
-container.logger.info('Hi');
-
 function joinUpnpNetwork() {
-  container.logger.info('joining the upnp network');
-
   upnp.createPeer({
     "server": container.server
   }).on('ready', function (peer) {
     container.peer = peer;
+
     peer.on('disappear', container.unhandleService);
 
     const scanFn = function () {
@@ -143,22 +67,22 @@ function joinUpnpNetwork() {
 };
 
 function handleService(service) {
-  container.logger.info('Found a service',
-    {
-      "USN": service.USN,
-      "model": service.device.modelName
-    });
-
   service.initTimestamp = Date.now();
 
-  service.clearScrobbleSongTimeout = function () {
-    container.song = null;
-    container.trackDurationInSeconds = null;
-    container.playingSince = null;
-    container.playingUntil = null;
-    container.scrobblingAt = null;
+  service.clearSong = function () {
     clearTimeout(service.scrobbleSongTimeout);
     service.scrobbleSongTimeout = null;
+  };
+
+  service.eventQueue = {
+    "_store": [],
+    "_maxLength": 8,
+    "enqueue": function (obj) {
+      this._store.push(obj);
+      if (this._store.length > this._maxLenght) {
+        this._store.shift();
+      }
+    }
   };
 
   service.bind(function (serviceClient) {
@@ -169,120 +93,52 @@ function handleService(service) {
 };
 
 function handleEvent(data, service) {
-  container.logger.info('Received an event from service',
-    {
-      "USN": service.USN,
-      "data": container.prettyJson(data)
-    });
-
-  if (container.resetPeerTimeout) {
-    clearTimeout(container.resetPeerTimeout);
-    container.resetPeerTimeout = null;
-  }
-
-  // reset peer-upnp 10 seconds after the renew-timeout, if no event is triggered by the renewal-process
-  //container.resetPeerTimeout = setTimeout(container.resetPeer, (remainingTrackDuration + 10) * 1000);
-  const resetPeerOffset = container.getRemainingTimeFromTimeout(service.timeoutHandle, service.initTimestamp);
-  container.resetPeerTimeout = setTimeout(container.resetPeer, resetPeerOffset);
+  const complexEvent = {
+    "timestamp": Date.now(),
+    "change": null,
+    "event": builder.buildObject(data),
+    "metadata": null
+  };
+  service.eventQueue.enqueue(complexEvent);
 
   const lastChange = data.LastChange;
   if (!_.isString(lastChange)) {
-    container.logger.warn('LastChange was not of type string',
-      {
-        "data": container.prettyJson(data)
-      });
+    // TODO add logging
     return;
   }
 
+  complexEvent.change = lastChange;
+
   xmlParser.parseString(lastChange, function (error, data) {
     if (error) {
-      container.logger.warn(error,
-        'Could not parse lastChange',
-        lastChange);
+      // TODO add logging
+      service.lastMetadata = null;
       return;
     }
 
-    const transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
-    if (transportState === 'NO_MEDIA_PRESENT') {
-      container.logger.info('No media present');
-      service.clearScrobbleSongTimeout();
+    complexEvent.metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
+    if (!complexEvent.metadata) {
       return;
     }
 
-    if (transportState === 'PAUSED_PLAYBACK') {
-      container.logger.info('Playback paused');
-      service.clearScrobbleSongTimeout();
-      return;
-    }
-
-    // TODO implement other transportStates
-
-    var metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
-    if (transportState === 'PLAYING'
-      || metadata) {
-      container.logger.info('Playing');
-
-      const instanceId = objectPath.get(data, 'Event.InstanceID.val');
-
-      metadata = metadata || service.lastMetadata;
-      if (!metadata) {
-        container.logger.warn('No metadata inside',
-          {
-            "data": container.prettyJSON(data)
-          });
+    xmlParser.parseString(complexEvent.metadata, function (error, data) {
+      if (error) {
+        // TODO add logging
         return;
       }
+      
+      service.device.song = {
+        "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
+        "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
+        "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
+        "duration": objectPath.get(data, 'DIDL-Lite.item.res.duration'),
+        "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._'),
+        "positionInSeconds": 0,
+        "durationInSeconds": 0
+      };
 
-      // TODO move to handlebars helper - this is only relevant to the view
-      service.lastMetadata = metadata;
-
-      xmlParser.parseString(metadata, function (error, data) {
-        if (error) {
-          container.logger.error(error,
-            'Could not parse metadata',
-            metadata);
-          return;
-        }
-
-        service.clearScrobbleSongTimeout();
-
-        container.song = {
-          "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
-          "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
-          "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
-          "duration": objectPath.get(data, 'DIDL-Lite.item.res.duration'),
-          "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._')
-        };
-
-        container.scribble.NowPlaying(container.song);
-        container.playingSince = Date.now();
-
-        if (service.serviceClient.GetPositionInfo) {
-          service.serviceClient.GetPositionInfo({
-            'InstanceID': instanceId
-          }, function (result) {
-            container.trackDurationInSeconds = container.getDurationInSeconds(result.TrackDuration);
-            if (container.trackDurationInSeconds === -1) {
-              return;
-            }
-
-            const trackPositionInSeconds = container.getDurationInSeconds(result.RelTime);
-            if (trackPositionInSeconds === -1) {
-              return;
-            }
-
-            const remainingTrackDurationInSeconds = container.trackDurationInSeconds - trackPositionInSeconds;
-
-            container.playingUntil = container.playingSince + (remainingTrackDurationInSeconds * 1000);
-
-            const scrobbleSongOffset = Math.max(1, container.trackDurationInSeconds * 0.8 - trackPositionInSeconds) * 1000;
-            service.scrobbleSongTimeout = setTimeout(container.scrobbleSong, scrobbleSongOffset);
-
-            container.scrobblingAt = container.playingSince + scrobbleSongOffset;
-          });
-        }
-      });
-    }
+      container.scribble.NowPlaying(service.device);
+    });
   });
 };
 
