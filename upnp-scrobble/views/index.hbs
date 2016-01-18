@@ -59,8 +59,8 @@
       <meter id="{{this.UDN}}-meter"
              value="{{this.song.positionInSeconds}}"
              max="{{this.song.durationInSeconds}}"
-             low="{{this.song.scrobbleOffsetInSeconds}}"
-             optimum="{{this.song.scrobbleOffsetInSeconds}}"
+             low="{{this.song.absoluteScrobbleOffsetInSeconds}}"
+             optimum="{{this.song.absoluteScrobbleOffsetInSeconds}}"
              style="position: absolute; width: 300px; height: 300px;"></meter>
       <img src="{{this.song.albumArtURI}}"
            style="width: 300px; height: 300px;" />

@@ -71,14 +71,14 @@ var container = {
     }, function (result) {
       song.durationInSeconds = container.getSeconds(result.TrackDuration);
       song.positionInSeconds = container.getSeconds(result.RelTime);
-      song.scrobbleOffsetInSeconds = song.durationInSeconds * 0.8;
       song.timestamp = Date.now();
-      song.scrobbleOffsetInSeconds = Math.max(1, song.scrobbleOffsetInSeconds - song.positionInSeconds);
+      song.absoluteScrobbleOffsetInSeconds = song.durationInSeconds * 0.8;
+      song.relativeScrobbleOffsetInSeconds = Math.max(1, song.absoluteScrobbleOffsetInSeconds - song.positionInSeconds);
 
       service.clearScrobbleSongTimeout();
       service.scrobbleSongTimeout = setTimeout(function () {
         container.scribble.Scrobble(song);
-      }, song.scrobbleOffsetInSeconds * 1000);
+      }, song.relativeScrobbleOffsetInSeconds * 1000);
     });
   }
 };
@@ -172,7 +172,9 @@ function handleEvent(data, service) {
             "duration": objectPath.get(data, 'DIDL-Lite.item.res.duration'),
             "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._'),
             "durationInSeconds": 0,
-            "positionInSeconds": 0
+            "positionInSeconds": 0,
+            "scrobbleOffsetInSeconds": 0,
+            "timestamp": Date.now()
           };
 
             container.nowPlaying(service,
