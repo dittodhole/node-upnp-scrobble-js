@@ -45,6 +45,22 @@ var container = {
   "unhandleService": function (service) {
     service.clearSong();
     service.removeAllListeners('event');
+  },
+  "getSeconds": function (duration) {
+    if (!duration) {
+      return -1;
+    }
+
+    const parts = duration.split(':');
+    const seconds = (+parts[0]) * 60 * 60 + (+parts[1]) * 60 + (+parts[2]);
+
+    return seconds;
+  },
+  "scrobbleSong": function (song) {
+    if (!container.scribble) {
+      return;
+    }
+    container.scribble.Scrobble(song);
   }
 };
 
@@ -67,8 +83,6 @@ function joinUpnpNetwork() {
 };
 
 function handleService(service) {
-  service.initTimestamp = Date.now();
-
   service.clearSong = function () {
     clearTimeout(service.scrobbleSongTimeout);
     service.scrobbleSongTimeout = null;
@@ -121,23 +135,38 @@ function handleEvent(data, service) {
       return;
     }
 
+    complexEvent.instanceId = objectPath.get(data, 'Event.InstanceID.val');
+
     xmlParser.parseString(complexEvent.metadata, function (error, data) {
       if (error) {
         // TODO add logging
         return;
       }
-      
+
       service.device.song = {
         "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
         "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
         "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
         "duration": objectPath.get(data, 'DIDL-Lite.item.res.duration'),
         "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._'),
-        "positionInSeconds": 0,
-        "durationInSeconds": 0
+        "durationInSeconds": 0,
+        "positionInSeconds": 0
       };
 
       container.scribble.NowPlaying(service.device.song);
+
+      service.device.song.durationInSeconds = container.getSeconds(service.device.song.duration);
+
+      service.serviceClient.GetPositionInfo({
+        "InstanceID": complexEvent.instanceId
+      }, function (result) {
+        service.device.song.durationInSeconds = container.getSeconds(result.TrackDuration);
+        service.device.song.positionInSeconds = container.getSeconds(result.RelTime);
+        service.device.song.scrobbleOffsetInSeconds = Math.max(1, service.device.song.durationInSeconds * 0.8 - service.device.song.positionInSeconds);
+        service.scrobbleSongTimeout = setTimeout(function () {
+          container.scrobbleSong(service.device.song);
+        }, service.device.song.scrobbleOffsetInSeconds * 1000);
+      });
     });
   });
 };
