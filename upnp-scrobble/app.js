@@ -75,7 +75,7 @@ var container = {
 
       service.device.clearScrobbleSongTimeout();
       service.device.scrobbleSongTimeout = setTimeout(function () {
-        this.scribble.Scrobble(song);
+        that.scribble.Scrobble(song);
       }, song.relativeScrobbleOffsetInSeconds * 1000);
     });
   }
