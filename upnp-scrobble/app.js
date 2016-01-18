@@ -154,7 +154,7 @@ function handleEvent(data, service) {
       };
 
       container.scribble.NowPlaying(service.device.song);
-
+      
       service.device.song.durationInSeconds = container.getSeconds(service.device.song.duration);
 
       service.serviceClient.GetPositionInfo({
@@ -162,6 +162,7 @@ function handleEvent(data, service) {
       }, function (result) {
         service.device.song.durationInSeconds = container.getSeconds(result.TrackDuration);
         service.device.song.positionInSeconds = container.getSeconds(result.RelTime);
+        service.device.song.timestamp = Date.now();
         service.device.song.scrobbleOffsetInSeconds = Math.max(1, service.device.song.durationInSeconds * 0.8 - service.device.song.positionInSeconds);
         service.scrobbleSongTimeout = setTimeout(function () {
           container.scrobbleSong(service.device.song);
