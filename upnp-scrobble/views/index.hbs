@@ -22,13 +22,16 @@
   </style>
 </head>
 <body class="container">
-  <div class="row">
-    <div class="column">
-      <h1>Currently playing</h1>
-    </div>
-  </div>
   {{#each peer.remoteDevices}}
   <div class="row">
+    <div class="column">
+      <img src="{{this.icons.0.url}}" />
+    </div>
+    <div class="column">
+      <strong>{{this.friendlyName}}</strong><br />
+      {{this.modelName}}
+    </div>
+    {{#if this.song}}
     <div class="column"
          style="text-align: right;">
       <img src="{{this.song.albumArtURI}}" />
@@ -44,7 +47,7 @@
   </div>
   <div class="row">
     <div class="column">
-      <progress id="progress{{this.USN}}"
+      <progress id="progress"
                 value="{{this.song.positionInSeconds}}"
                 max="{{this.song.durationInSeconds}}"
                 style="width: 100%;" />
@@ -59,23 +62,9 @@
          style="text-align: right;">
       <span id="trackDuration" />
     </div>
+    {{/if}}
   </div>
-  {{/each}}
-
-  <div class="row">
-    <div class="column">
-      <h1>Connected devices</h1>
-    </div>
-  </div>
-  {{#each peer.remoteDevices}}
-  <div class="row">
-    <div class="column">
-      <strong>{{this.friendlyName}}</strong>
-    </div>
-  </div>
-  <div class="row">
-    <div class="column">{{this.modelName}}</div>
-  </div>
+  <!--
   {{#each this.services}}
   {{#each this.eventQueue._store}}
   <h3>{{this.timestamp}}</h3>
@@ -102,6 +91,7 @@
   {{/if}}
   {{/each}}
   {{/each}}
+  -->
   {{/each}}
 </body>
 </html>
