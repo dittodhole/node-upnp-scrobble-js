@@ -14,10 +14,12 @@
     }
 
       progress::-webkit-progress-bar {
-        background-color: #f4f5f6;
+        background: transparent;
       }
-      progress::-webkit-progress-value{
-        -webkit-transition: 1s linear;
+
+      progress::-webkit-progress-value {
+        opacity: 0.2;
+        -webkit-transition: 3s linear;
       }
   </style>
   <script type="text/javascript">
@@ -35,9 +37,29 @@
       {{this.modelName}}
     </div>
     {{#if this.song}}
+    <script type="text/javascript">
+      progressIntervals['{{this.UDN}}'] = window.setInterval(function () {
+        var position = (Date.now() - {{this.song.timestamp}}) / 1000 + {{this.song.positionInSeconds}};
+        if (position >= {{this.song.durationInSeconds}}) {
+          window.clearInterval(progressIntervals['{{this.UDN}}']);
+          progressIntervals['{{this.UDN}}'] = null;
+          window.setTimeout(function () {
+            window.location.reload();
+          }, 2 * 1000);
+        }
+
+        var progress = document.getElementById('{{this.UDN}}-progress');
+        progress.value = position;
+      }, 1 * 1000);
+    </script>
     <div class="column"
-         style="text-align: right;">
-      <img src="{{this.song.albumArtURI}}" />
+         style="text-align: right; position: relative;">
+      <progress id="{{this.UDN}}-progress"
+                value="{{this.song.positionInSeconds}}"
+                max="{{this.song.durationInSeconds}}"
+                style="position: absolute; width: 300px; height: 300px;"></progress>
+      <img src="{{this.song.albumArtURI}}"
+           style="width: 300px; height: 300px;" />
     </div>
   </div>
   <div class="row">
@@ -46,57 +68,6 @@
       <strong>{{this.song.track}}</strong><br />
       {{this.song.artist}}<br />
       <small>{{this.song.album}}</small>
-    </div>
-  </div>
-  <script type="text/javascript">
-    progressIntervals['{{this.UDN}}'] = window.setInterval(function () {
-      var position = (Date.now() - {{this.song.timestamp}}) / 1000 + {{this.song.positionInSeconds}};
-      if (position >= {{this.song.durationInSeconds}}) {
-        window.clearInterval(progressIntervals['{{this.UDN}}']);
-        progressIntervals['{{this.UDN}}'] = null;
-        window.setTimeout(function () {
-          window.location.reload();
-        }, 2 * 1000);
-      }
-
-      var progress = document.getElementById('{{this.UDN}}-progress');
-      progress.value = position;
-
-      var trackPosition = document.getElementById('{{this.UDN}}-trackPosition');
-      trackPosition.textContent = moment.duration(position, 'seconds').format('hh:mm:ss', {
-        "forceLength": true,
-        "trim": false
-      });
-    }, 1 * 1000);
-    window.setTimeout(function () {
-      var trackPosition = document.getElementById('{{this.UDN}}-trackPosition');
-      trackPosition.textContent = moment.duration({{this.song.positionInSeconds}}, 'seconds').format('hh:mm:ss', {
-        "forceLength": true,
-        "trim": false
-      });
-      var trackDuration = document.getElementById('{{this.UDN}}-trackDuration');
-      trackDuration.textContent = moment.duration({{this.song.durationInSeconds}}, 'seconds').format('hh:mm:ss', {
-        "forceLength": true,
-        "trim": false
-      });
-    }, 0);
-  </script>
-  <div class="row">
-    <div class="column">
-      <progress id="{{this.UDN}}-progress"
-                value="{{this.song.positionInSeconds}}"
-                max="{{this.song.durationInSeconds}}"
-                style="width: 100%;" />
-    </div>
-  </div>
-  <div class="row">
-    <div class="column"
-         style="text-align: left">
-      <span id="{{this.UDN}}-trackPosition" />
-    </div>
-    <div class="column"
-         style="text-align: right;">
-      <span id="{{this.UDN}}-trackDuration" />
     </div>
     {{/if}}
   </div>
