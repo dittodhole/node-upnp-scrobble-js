@@ -20,6 +20,9 @@
         -webkit-transition: 1s linear;
       }
   </style>
+  <script type="text/javascript">
+    var progressIntervals = {};
+  </script>
 </head>
 <body class="container">
   {{#each peer.remoteDevices}}
@@ -46,8 +49,15 @@
     </div>
   </div>
   <script type="text/javascript">
-    window.setInterval(function () {
+    progressIntervals['{{this.UDN}}'] = window.setInterval(function () {
       var position = (Date.now() - {{this.song.timestamp}}) / 1000 + {{this.song.positionInSeconds}};
+      if (position >= {{this.song.durationInSeconds}}) {
+        window.clearInterval(progressIntervals['{{this.UDN}}']);
+        progressIntervals['{{this.UDN}}'] = null;
+        window.setTimeout(function () {
+          window.location.reload();
+        }, 2 * 1000);
+      }
 
       var progress = document.getElementById('{{this.UDN}}-progress');
       progress.value = position;
@@ -65,7 +75,7 @@
         "trim": false
       });
       var trackDuration = document.getElementById('{{this.UDN}}-trackDuration');
-      trackDuration.textContent = moment.duration({{this.song.positionInSeconds}}, 'seconds').format('hh:mm:ss', {
+      trackDuration.textContent = moment.duration({{this.song.durationInSeconds}}, 'seconds').format('hh:mm:ss', {
         "forceLength": true,
         "trim": false
       });
