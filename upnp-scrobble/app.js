@@ -23,10 +23,7 @@ handlebars.registerHelper('formatXML', function (data) {
 });
 
 var container = {
-  "scribble": new Scribble(config.lastfm.key,
-    config.lastfm.secret,
-    config.lastfm.username,
-    config.lastfm.password),
+  "scribble": new Scribble(config.lastfm.key, config.lastfm.secret, config.lastfm.username, config.lastfm.password),
   "server": http.createServer()
     .on('request', function (req, res) {
       if (req.url !== '/') {
@@ -62,22 +59,22 @@ var container = {
       return;
     }
 
-    container.scribble.NowPlaying(song);
+    this.scribble.NowPlaying(song);
 
-    song.durationInSeconds = container.getSeconds(song.duration);
+    song.durationInSeconds = this.getSeconds(song.duration);
 
     service.serviceClient.GetPositionInfo({
       "InstanceID": instanceId
     }, function (result) {
-      song.durationInSeconds = container.getSeconds(result.TrackDuration);
-      song.positionInSeconds = container.getSeconds(result.RelTime);
+      song.durationInSeconds = this.getSeconds(result.TrackDuration);
+      song.positionInSeconds = this.getSeconds(result.RelTime);
       song.timestamp = Date.now();
       song.absoluteScrobbleOffsetInSeconds = song.durationInSeconds * 0.8;
       song.relativeScrobbleOffsetInSeconds = Math.max(1, song.absoluteScrobbleOffsetInSeconds - song.positionInSeconds);
 
       service.clearScrobbleSongTimeout();
       service.scrobbleSongTimeout = setTimeout(function () {
-        container.scribble.Scrobble(song);
+        this.scribble.Scrobble(song);
       }, song.relativeScrobbleOffsetInSeconds * 1000);
     });
   }
@@ -156,9 +153,10 @@ function handleEvent(data, service) {
     complexEvent.metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
     complexEvent.instanceId = objectPath.get(data, 'Event.InstanceID.val');
 
-    if (complexEvent.transportState === 'PLAYING'
-      || !complexEvent.transportState) {
+    if (!complexEvent.transportState
+      || complexEvent.transportState === 'PLAYING') {
       if (complexEvent.metadata) {
+        
         xmlParser.parseString(complexEvent.metadata, function (error, data) {
           if (error) {
             // TODO add logging
@@ -177,12 +175,10 @@ function handleEvent(data, service) {
             "timestamp": Date.now()
           };
 
-            container.nowPlaying(service,
-                complexEvent.instanceId);
+            container.nowPlaying(service, complexEvent.instanceId);
         });
       } else {
-          container.nowPlaying(service,
-              complexEvent.instanceId);
+          container.nowPlaying(service, complexEvent.instanceId);
       }
     }
     else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
