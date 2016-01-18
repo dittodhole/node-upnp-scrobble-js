@@ -137,7 +137,7 @@ function handleEvent(data, service) {
         "durationInSeconds": 0
       };
 
-      container.scribble.NowPlaying(service.device);
+      container.scribble.NowPlaying(service.device.song);
     });
   });
 };
