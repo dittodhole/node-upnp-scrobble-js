@@ -40,7 +40,7 @@ var container = {
       res.end();
     }).listen(config.serverPort),
   "unhandleService": function (service) {
-    service.clearSong();
+    service.device.clearSong();
     service.removeAllListeners('event');
   },
   "getSeconds": function (duration) {
@@ -72,8 +72,8 @@ var container = {
       song.absoluteScrobbleOffsetInSeconds = song.durationInSeconds * 0.8;
       song.relativeScrobbleOffsetInSeconds = Math.max(1, song.absoluteScrobbleOffsetInSeconds - song.positionInSeconds);
 
-      service.clearScrobbleSongTimeout();
-      service.scrobbleSongTimeout = setTimeout(function () {
+      service.device.clearScrobbleSongTimeout();
+      service.device.scrobbleSongTimeout = setTimeout(function () {
         this.scribble.Scrobble(song);
       }, song.relativeScrobbleOffsetInSeconds * 1000);
     });
@@ -99,13 +99,13 @@ function joinUpnpNetwork() {
 };
 
 function handleService(service) {
-  service.clearScrobbleSongTimeout = function () {
-    clearTimeout(service.scrobbleSongTimeout);
-    service.scrobbleSongTimeout = null;
+  service.device.clearScrobbleSongTimeout = function () {
+    clearTimeout(this.scrobbleSongTimeout);
+    this.scrobbleSongTimeout = null;
   }
-  service.clearSong = function () {
-    service.clearScrobbleSongTimeout();
-    service.device.song = null;
+  service.device.clearSong = function () {
+    this.clearScrobbleSongTimeout();
+    this.song = null;
   };
 
   service.eventQueue = {
@@ -182,10 +182,10 @@ function handleEvent(data, service) {
       }
     }
     else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
-      service.clearSong();
+      service.device.clearSong();
     }
     else if (complexEvent.transportState === 'NO_MEDIA_PRESENT') {
-      service.clearSong();
+      service.device.clearSong();
     }
   });
 };
