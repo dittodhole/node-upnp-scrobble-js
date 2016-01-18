@@ -113,7 +113,7 @@ function handleService(service) {
     "_maxLength": 8,
     "enqueue": function (obj) {
       this._store.push(obj);
-      if (this._store.length > this._maxLenght) {
+      if (this._store.length > this._maxLength) {
         this._store.shift();
       }
     }
