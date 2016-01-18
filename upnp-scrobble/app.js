@@ -182,7 +182,7 @@ function handleService(service) {
   };
   service.eventQueue = {
     "_store": [],
-    "_maxLength": 4,
+    "_maxLength": 10,
     "enqueue": function (obj) {
       this._store.push(obj);
       if (this._store.length > this._maxLength) {
@@ -220,15 +220,14 @@ function handleEvent(data, service) {
       // TODO add logging
       return;
     }
-
+    
     complexEvent.transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
-    complexEvent.metadata = objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
+    complexEvent.metadata = objectPath.get(data, 'Event.InstanceID.CurrentTrackMetaData.val') || objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
     complexEvent.instanceId = objectPath.get(data, 'Event.InstanceID.val');
 
     if (!complexEvent.transportState
       || complexEvent.transportState === 'PLAYING') {
       if (complexEvent.metadata) {
-        
         xmlParser.parseString(complexEvent.metadata, function (error, data) {
           if (error) {
             // TODO add logging
@@ -238,7 +237,7 @@ function handleEvent(data, service) {
           service.device.song = {
             "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
             "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
-            "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
+            "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album') || objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
             "duration": objectPath.get(data, 'DIDL-Lite.item.res.duration'),
             "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._'),
             "durationInSeconds": 0,
