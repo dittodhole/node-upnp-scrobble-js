@@ -31,15 +31,8 @@
   {{#each peer.remoteDevices}}
   <div class="row">
     <div class="column">
-      <img src="{{this.icons.0.url}}" />
-    </div>
-    <div class="column">
-      <strong>{{this.friendlyName}}</strong><br />
-      {{this.modelName}}<br/>
-      <small>Discovered at {{formatTime this.discoveryTime}}</small>
-    </div>
-    {{#if this.song}}
-    <script type="text/javascript">
+      {{#if song}}
+      <script type="text/javascript">
         meterIntervals['{{this.UDN}}'] = window.setInterval(function () {
         var position = (Date.now() - {{this.song.timestamp}}) / 1000 + {{this.song.positionInSeconds}};
         if (position >= {{this.song.durationInSeconds}}) {
@@ -53,54 +46,58 @@
         var meter = document.getElementById('{{this.UDN}}-meter');
         meter.value = position;
       }, 1 * 1000);
-    </script>
-    <div class="column"
-         style="text-align: right; position: relative;">
-      <meter id="{{this.UDN}}-meter"
-             value="{{this.song.positionInSeconds}}"
-             max="{{this.song.durationInSeconds}}"
-             low="{{this.song.absoluteScrobbleOffsetInSeconds}}"
-             optimum="{{this.song.absoluteScrobbleOffsetInSeconds}}"
-             style="position: absolute; width: 300px; height: 300px;"></meter>
-      <img src="{{this.song.albumArtURI}}"
-           style="width: 300px; height: 300px;" />
+      </script>
+      <div class="float-right"
+           style="margin-left: 10px; text-align: right;">
+        <meter id="{{this.UDN}}-meter"
+               value="{{this.song.positionInSeconds}}"
+               max="{{this.song.durationInSeconds}}"
+               low="{{this.song.absoluteScrobbleOffsetInSeconds}}"
+               optimum="{{this.song.absoluteScrobbleOffsetInSeconds}}"
+               style="position: absolute; width: 300px; height: 300px;"></meter>
+        <img src="{{this.song.albumArtURI}}"
+             style="width: 300px; height: 300px;" /><br />
+        <strong>{{this.song.track}}</strong><br />
+        {{this.song.artist}}<br />
+        <small>{{this.song.album}}</small>
+      </div>
+      {{/if}}
+      <div class="float-left">
+        <img src="{{this.icons.0.url}}" /><br />
+      </div>
+      <strong>{{this.friendlyName}}</strong><br />
+      {{this.modelName}}<br/>
+      <small>Discovered at {{formatTime this.discoveryTime}}</small>
+      <div style="max-height: 350px; overflow: auto">
+        {{#each this.services}}
+        {{#each-reverse this.eventQueue._store}}
+        <strong>{{formatTime this.timestamp}}</strong>
+        {{#if this.event}}
+        <div class="row">
+          <div class="column">
+            <pre><code>{{formatXML this.event}}</code></pre>
+          </div>
+        </div>
+        {{/if}}
+        {{#if this.change}}
+        <div class="row">
+          <div class="column">
+            <pre><code>{{formatXML this.change}}</code></pre>
+          </div>
+        </div>
+        {{/if}}
+        {{#if this.metadata}}
+        <div class="row">
+          <div class="column">
+            <pre><code>{{formatXML this.metadata}}</code></pre>
+          </div>
+        </div>
+        {{/if}}
+        {{/each-reverse}}
+        {{/each}}
+      </div>
     </div>
   </div>
-  <div class="row">
-    <div class="column"
-         style="text-align: right;">
-      <strong>{{this.song.track}}</strong><br />
-      {{this.song.artist}}<br />
-      <small>{{this.song.album}}</small>
-    </div>
-    {{/if}}
-  </div>
-  {{#each this.services}}
-  {{#each this.eventQueue._store}}
-  <strong>{{formatTime this.timestamp}}</strong>
-  {{#if this.event}}
-  <div class="row">
-    <div class="column">
-      <pre><code>{{formatXML this.event}}</code></pre>
-    </div>
-  </div>
-  {{/if}}
-  {{#if this.change}}
-  <div class="row">
-    <div class="column">
-      <pre><code>{{formatXML this.change}}</code></pre>
-    </div>
-  </div>
-  {{/if}}
-  {{#if this.metadata}}
-  <div class="row">
-    <div class="column">
-      <pre><code>{{formatXML this.metadata}}</code></pre>
-    </div>
-  </div>
-  {{/if}}
-  {{/each}}
-  {{/each}}
   {{/each}}
 </body>
 </html>

@@ -13,8 +13,10 @@ const Scribble = require('scribble');
 const handlebars = require('handlebars');
 const fs = require('fs');
 const pd = require('pretty-data2').pd;
-
+const helpers = require('diy-handlebars-helpers');
 const config = require('./config.json');
+
+_.extend(handlebars.helpers, require('diy-handlebars-helpers'));
 
 'use strict';
 
