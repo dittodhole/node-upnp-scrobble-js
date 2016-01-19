@@ -31,32 +31,36 @@
     <div class="column">
       {{#if song}}
       <script type="text/javascript">
-        meterIntervals['{{this.UDN}}'] = window.setInterval(function () {
-          var songTimestamp = {{this.song.timestamp}};
-          if (!songTimestamp) {
-            window.clearInterval(meterIntervals['{{this.UDN}}']);
-            meterIntervals['{{this.UDN}}'] = null;
-          }
+          window.setTimeout(function () {
+            var songTimestamp = {{this.song.timestamp}};
+            if (!songTimestamp) {
+                return;
+            }
+            var durationInSeconds = {{this.song.durationInSeconds}};
+            if (!durationInSeconds) {
+                return;
+            }
 
-          var durationInSeconds = {{this.song.durationInSeconds}};
-          if (!durationInSeconds) {
-            window.clearInterval(meterIntervals['{{this.UDN}}']);
-            meterIntervals['{{this.UDN}}'] = null;
-          }
+            var updateMeterFn = function () {
+                var positionInSeconds = {{this.song.positionInSeconds}};
+                var actualPositionInSeconds = (Date.now() - songTimestamp) / 1000 + positionInSeconds;
+                if (actualPositionInSeconds >= durationInSeconds) {
+                    window.clearInterval(meterIntervals['{{this.UDN}}']);
+                    meterIntervals['{{this.UDN}}'] = null;
+                    window.setTimeout(function () {
+                        window.location.reload();
+                    }, {{this.statusPageRefreshAfterPlayTimeoutInSeconds}} * 1000);
+                }
+                else {
+                    var meter = document.getElementById('{{this.UDN}}-meter');
+                    meter.value = actualPositionInSeconds;
+                }
 
-          var positionInSeconds = {{this.song.positionInSeconds}};
-          var position = (Date.now() - songTimestamp) / 1000 + positionInSeconds;
-          if (position >= durationInSeconds) {
-            window.clearInterval(meterIntervals['{{this.UDN}}']);
-            meterIntervals['{{this.UDN}}'] = null;
-            window.setTimeout(function () {
-              window.location.reload();
-            }, {{this.statusPageRefreshAfterPlayTimeoutInSeconds}} * 1000);
-          }
+                return arguments.callee;
+            }();
 
-          var meter = document.getElementById('{{this.UDN}}-meter');
-          meter.value = position;
-        }, {{this.statusPageMeterUpdateIntervalInSeconds}} * 1000);
+            meterIntervals['{{this.UDN}}'] = window.setInterval(updateMeterFn, {{this.statusPageMeterUpdateIntervalInSeconds}} * 1000);
+        }, 0);
       </script>
       <div class="float-right"
            style="margin-left: 10px; text-align: right;">
