@@ -49,13 +49,13 @@
 
             var updateMeterFn = function () {
                 var positionInSeconds = {{this.song.positionInSeconds}};
-                var actualPositionInSeconds = (Date.now() - songTimestamp) / 1000 + positionInSeconds;
+                var actualPositionInSeconds = (Date.now() - songTimestamp) / 1000 + positionInSeconds + {{@root.statusPageMeterUpdateIntervalInSeconds}};
                 if (actualPositionInSeconds >= durationInSeconds) {
                     window.clearInterval(meterIntervals['{{this.UDN}}']);
                     meterIntervals['{{this.UDN}}'] = null;
                     window.setTimeout(function () {
                         window.location.reload();
-                    }, {{@root.statusPageRefreshAfterPlayTimeoutInSeconds}} * 1000);
+                    }, ({{@root.statusPageMeterUpdateIntervalInSeconds}} + {{@root.statusPageRefreshAfterPlayTimeoutInSeconds}}) * 1000);
                 }
                 else {
                     var meter = document.getElementById('{{this.UDN}}-meter');
