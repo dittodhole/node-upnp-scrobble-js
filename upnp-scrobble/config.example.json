@@ -12,5 +12,5 @@
   "eventLogMaxLength": 10,
   "scrobbleFactor": 0.8,
   "statusPageMeterUpdateIntervalInSeconds": 5,
-  "statusPageRefreshAfterPlayTimeoutInSeconds":  2
+  "statusPageRefreshAfterPlayTimeoutInSeconds": 2
 }
