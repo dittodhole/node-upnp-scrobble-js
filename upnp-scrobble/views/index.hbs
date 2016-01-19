@@ -11,12 +11,18 @@
       -webkit-appearance: none;
     }
 
-      meter::-webkit-meter-bar {
+      ::-webkit-meter-bar {
         background: transparent;
       }
 
-      meter::-webkit-meter-inner-element {
+      ::-webkit-meter-inner-element {
         opacity: 0.5;
+        transition: {{this.statusPageMeterUpdateIntervalInSeconds}}s width;
+      }
+
+      ::-webkit-meter-even-less-good-value,
+      ::-webkit-meter-optimum-value,
+      ::-webkit-meter-suboptimal-value {
         transition: {{this.statusPageMeterUpdateIntervalInSeconds}}s linear;
       }
   </style>
