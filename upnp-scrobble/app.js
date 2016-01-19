@@ -219,7 +219,9 @@ function handleEvent(data, service) {
     "timestamp": Date.now(),
     "change": data.LastChange,
     "event": builder.buildObject(data),
-    "metadata": null
+    "transportState": null,
+    "metadata": null,
+    "instanceId": null
   };
   service.eventQueue.enqueue(complexEvent);
 
