@@ -155,6 +155,26 @@ var container = {
       clearTimeout(this.scanTimeout);
       this.scanTimeout = null;
     }
+    },
+  "parseEvent": function (data) {
+    const song = {
+      "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
+      "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
+      "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
+      "duration": objectPath.get(data, 'DIDL-Lite.item.res.duration'),
+      "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._'),
+      "durationInSeconds": 0,
+      "positionInSeconds": 0,
+      "scrobbleOffsetInSeconds": 0,
+      "timestamp": Date.now()
+    };
+
+    const section = objectPath.get(data, 'DIDL-Lite.item.raumfeld:section');
+    if (section === 'Soundcloud') {
+      song.album = objectPath.get(data, 'DIDL-Lite.item.upnp:artist');
+    }
+
+    return song;
   }
 };
 
@@ -252,17 +272,7 @@ function handleEvent(data, service) {
             return;
           }
 
-          const song = {
-            "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
-            "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
-            "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album') || objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
-            "duration": objectPath.get(data, 'DIDL-Lite.item.res.duration'),
-            "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._'),
-            "durationInSeconds": 0,
-            "positionInSeconds": 0,
-            "scrobbleOffsetInSeconds": 0,
-            "timestamp": Date.now()
-          };
+          const song = container.parseEvent(data);
 
           container.nowPlaying(service, complexEvent.instanceId, song);
         });
