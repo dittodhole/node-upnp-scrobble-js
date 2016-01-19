@@ -11,5 +11,6 @@
   "serverPort": 1337,
   "eventLogMaxLength": 10,
   "scrobbleFactor": 0.8,
-  "statusPageMeterUpdateIntervalInSeconds": 5
+  "statusPageMeterUpdateIntervalInSeconds": 5,
+  "statusPageRefreshAfterPlayTimeoutInSeconds":  2
 }

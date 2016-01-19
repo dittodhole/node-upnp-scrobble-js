@@ -31,6 +31,7 @@ handlebars.registerHelper('formatTime', function (time) {
 
 var container = {
   "statusPageMeterUpdateIntervalInSeconds": config.statusPageMeterUpdateIntervalInSeconds || 1,
+  "statusPageRefreshAfterPlayTimeoutInSeconds": config.statusPageRefreshAfterPlayTimeoutInSeconds || 2,
   "scribble": new Scribble(config.lastfm.key, config.lastfm.secret, config.lastfm.username, config.lastfm.password),
   "server": http.createServer()
     .on('request', function (req, res) {
