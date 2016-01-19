@@ -106,7 +106,7 @@
               class="button button-outline"
               style="display: block; margin-top: 1rem;">Show log</button>
       <div id="{{this.UDN}}-log"
-           style="max-height: 350px; overflow: auto; display: none;">
+           style="margin-top: 1rem; max-height: 350px; overflow: auto; display: none;">
         {{#each this.services}}
         {{#each-reverse this.eventQueue._store}}
         <strong>{{formatTime this.timestamp}}</strong>
