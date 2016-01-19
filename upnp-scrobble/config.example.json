@@ -9,5 +9,6 @@
   "scanIntervalInSeconds": 30,
   "serviceType": "urn:schemas-upnp-org:service:AVTransport:1",
   "serverPort": 1337,
-  "eventLogMaxLength": 10
+  "eventLogMaxLength": 10,
+  "scrobbleFactor": 0.8
 }

@@ -93,7 +93,7 @@ var container = {
       song.durationInSeconds = this.getSeconds(result.TrackDuration);
       song.positionInSeconds = this.getSeconds(result.RelTime);
       song.timestamp = Date.now();
-      song.absoluteScrobbleOffsetInSeconds = song.durationInSeconds * 0.8;
+      song.absoluteScrobbleOffsetInSeconds = song.durationInSeconds * (config.scrobbleFactor || 0.8);
       song.relativeScrobbleOffsetInSeconds = Math.max(1, song.absoluteScrobbleOffsetInSeconds - song.positionInSeconds);
 
       service.device.clearScrobbleSongTimeout();
