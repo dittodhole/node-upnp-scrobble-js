@@ -156,7 +156,7 @@ var container = {
       this.scanTimeout = null;
     }
     },
-  "parseEvent": function (data) {
+  "parseSong": function (data) {
     const song = {
       "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
       "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
@@ -272,7 +272,7 @@ function handleEvent(data, service) {
             return;
           }
 
-          const song = container.parseEvent(data);
+          const song = container.parseSong(data);
 
           container.nowPlaying(service, complexEvent.instanceId, song);
         });
