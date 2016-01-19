@@ -195,7 +195,7 @@ function handleService(service) {
   };
   service.eventQueue = {
     "_store": [],
-    "_maxLength": 10,
+    "_maxLength": config.eventLogMaxLength || 10,
     "enqueue": function (obj) {
       this._store.push(obj);
       if (this._store.length > this._maxLength) {
