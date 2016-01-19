@@ -17,13 +17,13 @@
 
       ::-webkit-meter-inner-element {
         opacity: 0.5;
-        transition: {{this.statusPageMeterUpdateIntervalInSeconds}}s width;
+        transition: {{this.statusPageMeterUpdateIntervalInSeconds}}s linear width;
       }
 
       ::-webkit-meter-even-less-good-value,
       ::-webkit-meter-optimum-value,
       ::-webkit-meter-suboptimal-value {
-        transition: {{this.statusPageMeterUpdateIntervalInSeconds}}s linear;
+        transition: {{this.statusPageMeterUpdateIntervalInSeconds}}s linear width;
       }
   </style>
   <script type="text/javascript">
