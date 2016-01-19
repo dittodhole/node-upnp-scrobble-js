@@ -125,9 +125,14 @@ var container = {
     service.clearResetPeerTimeout();
 
     const resetPeerOffset = this.getRemainingTimeFromTimeout(service.timeoutHandle, service.discoveryTime) + 5 * 1000;
+
+    console.log('resetPeerOffset', resetPeerOffset);
+
     service.resetPeerTimeout = setTimeout(_.bind(this.resetPeer, this), resetPeerOffset);
   },
   "getRemainingTimeFromTimeout": function (timeout, fallbackStartTime) {
+    console.log('getRemainingTimeFromTimeout', timeout, fallbackStartTime);
+
     var idleStart = timeout._idleStart;
     if (idleStart < fallbackStartTime) {
       idleStart += fallbackStartTime;
