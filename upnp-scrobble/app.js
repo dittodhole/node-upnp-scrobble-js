@@ -189,8 +189,7 @@ var container = {
 
       const albumArtUrl = url.parse(song.albumArtURI);
       const albumArtUrlQuerystring = querystring.parse(albumArtUrl.query);
-      song.albumArtURI = albumArtUrlQuerystring.playlistId;
-      song.albumArtUri = song.albumArtURI.replace('-large.jpg', '-t300x300.jpg');
+      song.albumArtURI = albumArtUrlQuerystring.playlistId.replace('-large.jpg', '-t300x300.jpg');
     }
 
     console.log('parseSong [OUT]', song);
