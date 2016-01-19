@@ -94,8 +94,9 @@
             var log = document.getElementById('{{this.UDN}}-log');
 
             showLogButton.onclick = function () {
-                log.style.display = 'block';
-            }
+              log.style.display = 'block';
+              showLogButton.style.display = 'none';
+            };
           }, 0);
       </script>
       <button id="{{this.UDN}}-showlog-button"
