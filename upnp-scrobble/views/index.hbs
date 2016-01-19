@@ -59,7 +59,7 @@
                 return arguments.callee;
             }();
 
-            meterIntervals['{{this.UDN}}'] = window.setInterval(updateMeterFn, {{this.statusPageMeterUpdateIntervalInSeconds}} * 1000);
+            meterIntervals['{{this.UDN}}'] = window.setInterval(updateMeterFn, {{@root.statusPageMeterUpdateIntervalInSeconds}} * 1000);
         }, 0);
       </script>
       <div class="float-right"
