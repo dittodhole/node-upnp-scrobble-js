@@ -49,6 +49,8 @@ var container = {
     }).listen(config.serverPort),
   "peer": null,
   "unhandleService": function (service) {
+    console.log('unhandleService', service.USN);
+
     if (service.clearResetPeerTimeout){
       service.clearResetPeerTimeout();
     }
@@ -68,11 +70,13 @@ var container = {
     return seconds;
   },
   "nowPlaying": function (service, instanceId, song) {
+    console.log('nowPlaying', service.USN, song);
+
     if (!song) {
       return;
     }
     if (!song.duration) {
-        return;
+      return;
     }
     if (song.duration === 'NOT_IMPLEMENTED') {
       return;
@@ -101,6 +105,8 @@ var container = {
 
       service.device.clearScrobbleSongTimeout();
       service.device.scrobbleSongTimeout = setTimeout(_.bind(function () {
+        console.log('scrobble', service.USN, song);
+
         this.scribble.Scrobble(song);
       }, this), song.relativeScrobbleOffsetInSeconds * 1000);
 
@@ -133,6 +139,8 @@ var container = {
     return remainingTime;
   },
   "resetPeer": function () {
+    console.log('resetPeer');
+
     this.clearScanTimeout();
 
     const that = this;
@@ -156,8 +164,10 @@ var container = {
       clearTimeout(this.scanTimeout);
       this.scanTimeout = null;
     }
-    },
+  },
   "parseSong": function (data) {
+    console.log('parseSong', data);
+
     const song = {
       "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
       "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
@@ -175,6 +185,8 @@ var container = {
       song.album = objectPath.get(data, 'DIDL-Lite.item.upnp:artist');
     }
 
+    console.log('parseSong [OUT]', song);
+
     return song;
   }
 };
@@ -188,6 +200,8 @@ function joinUpnpNetwork() {
     peer.on('disappear', container.unhandleService);
 
     const scanFn = function () {
+      console.log('scanFn');
+
       peer.removeListener(config.serviceType, handleService);
       peer.on(config.serviceType, handleService);
 
@@ -198,6 +212,8 @@ function joinUpnpNetwork() {
 };
 
 function handleService(service) {
+  console.log('handleService', service.USN);
+
   service.device.discoveryTime = Date.now();
   service.device.song = null;
   service.device.scrobbleSongTimeout = null;
@@ -206,6 +222,8 @@ function handleService(service) {
     this.scrobbleSongTimeout = null;
   };
   service.device.clearSong = function () {
+    console.log('clearSong', service.USN);
+
     this.clearScrobbleSongTimeout();
     this.song = null;
   };
@@ -220,6 +238,8 @@ function handleService(service) {
     "_store": [],
     "_maxLength": config.eventLogMaxLength || 10,
     "enqueue": function (obj) {
+      console.log('received event', service.USN, obj);
+
       this._store.push(obj);
       if (this._store.length > this._maxLength) {
         this._store.shift();
@@ -236,6 +256,8 @@ function handleService(service) {
 };
 
 function handleEvent(data, service) {
+  console.log('handleEvent', service.USN, data);
+
   container.enqueueResetPeerTimeout(service);
 
   const complexEvent = {
