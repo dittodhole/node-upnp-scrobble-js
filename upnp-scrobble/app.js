@@ -71,28 +71,23 @@ var container = {
     if (!song) {
       return;
     }
-
-    this.scribble.NowPlaying(song);
+    if (song.duration === 'NOT_IMPLEMENTED') {
+      return;
+    }
 
     song.durationInSeconds = this.getSeconds(song.duration);
+
+    this.scribble.NowPlaying(song);
 
     service.serviceClient.GetPositionInfo({
       "InstanceID": instanceId
     }, _.bind(function (result) {
-      if (!result.TrackDuration) {
-        return;
-      }
-      if (result.TrackDuration === 'NOT_IMPLEMENTED') {
-        return;
-      }
       if (!result.RelTime) {
         return;
       }
       if (result.RelTime === 'NOT_IMPLEMENTED') {
         return;
       }
-
-      song.durationInSeconds = this.getSeconds(result.TrackDuration);
       song.positionInSeconds = this.getSeconds(result.RelTime);
       song.timestamp = Date.now();
       song.absoluteScrobbleOffsetInSeconds = song.durationInSeconds * (config.scrobbleFactor || 0.8);
@@ -161,7 +156,7 @@ var container = {
       "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
       "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
       "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
-      "duration": objectPath.get(data, 'DIDL-Lite.item.res.duration'),
+      "duration": null,
       "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._'),
       "durationInSeconds": 0,
       "positionInSeconds": 0,
@@ -257,9 +252,12 @@ function handleEvent(data, service) {
       // TODO add logging
       return;
     }
-    
+
+    const metadata = objectPath.get(data, 'Event.InstanceID.CurrentTrackMetaData') || objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData');
+    const trackDuration = objectPath.get(metadata, 'CurrentTrackDuration.val');
+
     complexEvent.transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
-    complexEvent.metadata = objectPath.get(data, 'Event.InstanceID.CurrentTrackMetaData.val') || objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData.val');
+    complexEvent.metadata = objectPath.get(metadata, 'val');
     complexEvent.instanceId = objectPath.get(data, 'Event.InstanceID.val');
 
     if (!complexEvent.transportState
@@ -273,6 +271,7 @@ function handleEvent(data, service) {
           }
 
           const song = container.parseSong(data);
+          song.duration = trackDuration;
 
           container.nowPlaying(service, complexEvent.instanceId, song);
         });
