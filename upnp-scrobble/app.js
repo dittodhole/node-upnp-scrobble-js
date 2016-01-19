@@ -124,7 +124,7 @@ var container = {
 
     service.clearResetPeerTimeout();
 
-    const resetPeerOffset = this.getRemainingTimeFromTimeout(service.timeoutHandle, service.discoveryTime) + 5 * 1000;
+    const resetPeerOffset = this.getRemainingTimeFromTimeout(service.timeoutHandle, service.device.discoveryTime) + 5 * 1000;
 
     console.log('resetPeerOffset', resetPeerOffset);
 
