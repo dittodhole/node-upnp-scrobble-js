@@ -15,12 +15,14 @@
         background: transparent;
       }
 
-      meter::-webkit-meter-inner-element,
+      meter::-webkit-meter-inner-element {
+          opacity: 0.5
+      }
+
       meter::-webkit-meter-even-less-good-value,
       meter::-webkit-meter-optimum-value,
       meter::-webkit-meter-suboptimal-value {
-        opacity: 0.5;
-        -webkit-transition: {{this.statusPageMeterUpdateIntervalInSeconds}}s linear;
+        transition: {{this.statusPageMeterUpdateIntervalInSeconds}}s linear;
       }
   </style>
   <script type="text/javascript">
