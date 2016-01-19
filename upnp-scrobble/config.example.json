@@ -6,7 +6,7 @@
     "password": ""
   },
   "logLevel": "info",
-  "scanInterval": 30000,
+  "scanIntervalInSeconds": 30,
   "serviceType": "urn:schemas-upnp-org:service:AVTransport:1",
   "serverPort": 1337
 }

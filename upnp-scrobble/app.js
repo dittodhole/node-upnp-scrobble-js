@@ -168,7 +168,7 @@ function joinUpnpNetwork() {
       peer.removeListener(config.serviceType, handleService);
       peer.on(config.serviceType, handleService);
 
-      container.scanTimeout = setTimeout(scanFn, config.scanInterval || 30 * 1000);
+      container.scanTimeout = setTimeout(scanFn, (config.scanIntervalInSeconds || 30) * 1000);
     };
     scanFn();
   }).start();
