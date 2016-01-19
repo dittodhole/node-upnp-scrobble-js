@@ -41,7 +41,7 @@ var container = {
         const template = handlebars.compile(source);
         const html = template(container);
         res.writeHead(200, {
-            "Content-Type": 'text/html'
+          "Content-Type": 'text/html'
         });
         res.write(html);
         res.end();
@@ -51,7 +51,7 @@ var container = {
   "unhandleService": function (service) {
     console.log('unhandleService', service.USN);
 
-    if (service.clearResetPeerTimeout){
+    if (service.clearResetPeerTimeout) {
       service.clearResetPeerTimeout();
     }
     if (service.device.clear) {
@@ -75,19 +75,6 @@ var container = {
     if (!song) {
       return;
     }
-    if (!song.duration) {
-      return;
-    }
-    if (song.duration === 'NOT_IMPLEMENTED') {
-      return;
-    }
-
-    song.durationInSeconds = this.getSeconds(song.duration);
-    if (!song.durationInSeconds) {
-        return;
-    }
-
-    this.scribble.NowPlaying(song);
 
     service.serviceClient.GetPositionInfo({
       "InstanceID": instanceId
@@ -98,6 +85,17 @@ var container = {
       if (result.RelTime === 'NOT_IMPLEMENTED') {
         return;
       }
+      if (!result.TrackDuration) {
+        return;
+      }
+      if (result.TrackDuration === 'NOT_IMPLEMENTED') {
+        return;
+      }
+
+      this.scribble.NowPlaying(song);
+
+      song.duration = result.TrackDuration;
+      song.durationInSeconds = this.getSeconds(result.TrackDuration);
       song.positionInSeconds = this.getSeconds(result.RelTime);
       song.timestamp = Date.now();
       song.absoluteScrobbleOffsetInSeconds = song.durationInSeconds * (config.scrobbleFactor || 0.8);
@@ -149,11 +147,11 @@ var container = {
     const that = this;
     _.each(this.peer.remoteDevices, function (remoteDevice) {
       _.each(remoteDevice.services, function (service) {
-          that.unhandleService(service);
+        that.unhandleService(service);
       });
     });
 
-    if (this.peer){
+    if (this.peer) {
       this.peer.close();
       this.peer = null;
     }
@@ -285,7 +283,6 @@ function handleEvent(data, service) {
     }
 
     const metadata = objectPath.get(data, 'Event.InstanceID.CurrentTrackMetaData') || objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData');
-    const trackDuration = objectPath.get(data, 'Event.InstanceID.CurrentTrackDuration.val');
 
     complexEvent.transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
     complexEvent.metadata = objectPath.get(metadata, 'val');
@@ -302,18 +299,15 @@ function handleEvent(data, service) {
           }
 
           const song = container.parseSong(data);
-          song.duration = trackDuration;
 
           container.nowPlaying(service, complexEvent.instanceId, song);
         });
       } else {
         container.nowPlaying(service, complexEvent.instanceId, service.device.song);
       }
-    }
-    else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
+    } else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
       service.device.clearSong();
-    }
-    else if (complexEvent.transportState === 'NO_MEDIA_PRESENT') {
+    } else if (complexEvent.transportState === 'NO_MEDIA_PRESENT') {
       service.device.clearSong();
     }
   });
