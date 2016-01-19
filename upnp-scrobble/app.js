@@ -287,7 +287,7 @@ function handleEvent(data, service) {
     }
 
     const metadata = objectPath.get(data, 'Event.InstanceID.CurrentTrackMetaData') || objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData');
-    const trackDuration = objectPath.get(metadata, 'CurrentTrackDuration.val');
+    const trackDuration = objectPath.get(metadata, 'Event.InstanceID.CurrentTrackDuration.val');
 
     complexEvent.transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
     complexEvent.metadata = objectPath.get(metadata, 'val');
