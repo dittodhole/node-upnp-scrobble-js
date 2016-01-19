@@ -49,7 +49,7 @@
                     meterIntervals['{{this.UDN}}'] = null;
                     window.setTimeout(function () {
                         window.location.reload();
-                    }, {{this.statusPageRefreshAfterPlayTimeoutInSeconds}} * 1000);
+                    }, {{@root.statusPageRefreshAfterPlayTimeoutInSeconds}} * 1000);
                 }
                 else {
                     var meter = document.getElementById('{{this.UDN}}-meter');
