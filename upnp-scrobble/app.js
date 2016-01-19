@@ -59,7 +59,7 @@ var container = {
   },
   "getSeconds": function (duration) {
     if (!duration) {
-      return -1;
+      return 0;
     }
 
     const parts = duration.split(':');
@@ -71,11 +71,17 @@ var container = {
     if (!song) {
       return;
     }
+    if (!song.duration) {
+        return;
+    }
     if (song.duration === 'NOT_IMPLEMENTED') {
       return;
     }
 
     song.durationInSeconds = this.getSeconds(song.duration);
+    if (!song.durationInSeconds) {
+        return;
+    }
 
     this.scribble.NowPlaying(song);
 
