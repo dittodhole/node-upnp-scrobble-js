@@ -186,7 +186,7 @@ var container = {
 
     const raumfeldSection = objectPath.get(data, 'DIDL-Lite.item.raumfeld:section');
     if (raumfeldSection === 'SoundCloud') {
-      song.album = objectPath.get(data, 'DIDL-Lite.item.upnp:artist');
+      song.album = '_';
 
       const albumArtUrl = url.parse(song.albumArtURI);
       const albumArtUrlQuerystring = querystring.parse(albumArtUrl.query);
