@@ -115,13 +115,13 @@ var container = {
 
     service.clearResetPeerTimeout();
 
-    const resetPeerOffset = this.getRemainingTimeFromTimeout(service.timeoutHandle, service.initTimestamp) + 5 * 1000;
+    const resetPeerOffset = this.getRemainingTimeFromTimeout(service.timeoutHandle, service.discoveryTime) + 5 * 1000;
     service.resetPeerTimeout = setTimeout(_.bind(this.resetPeer, this), resetPeerOffset);
   },
-  "getRemainingTimeFromTimeout": function (timeout, fallbackTimestamp) {
+  "getRemainingTimeFromTimeout": function (timeout, fallbackStartTime) {
     var idleStart = timeout._idleStart;
-    if (idleStart < fallbackTimestamp) {
-      idleStart += fallbackTimestamp;
+    if (idleStart < fallbackStartTime) {
+      idleStart += fallbackStartTime;
     }
 
     const idleTimeout = timeout._idleTimeout;
@@ -186,7 +186,6 @@ function handleService(service) {
     this.clearScrobbleSongTimeout();
     this.song = null;
   };
-  service.initTimestamp = Date.now();
   service.resetPeerTimeout = null;
   service.clearResetPeerTimeout = function () {
     if (this.resetPeerTimeout) {
