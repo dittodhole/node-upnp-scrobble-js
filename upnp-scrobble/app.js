@@ -14,6 +14,8 @@ const handlebars = require('handlebars');
 const fs = require('fs');
 const pd = require('pretty-data2').pd;
 const helpers = require('diy-handlebars-helpers');
+const url = require('url');
+const querystring = require('querystring');
 const config = require('./config.json');
 
 _.extend(handlebars.helpers, require('diy-handlebars-helpers'));
@@ -181,9 +183,13 @@ var container = {
       "timestamp": Date.now()
     };
 
-    const section = objectPath.get(data, 'DIDL-Lite.item.raumfeld:section');
-    if (section === 'Soundcloud') {
+    const raumfeldSection = objectPath.get(data, 'DIDL-Lite.item.raumfeld:section');
+    if (raumfeldSection === 'SoundCloud') {
       song.album = objectPath.get(data, 'DIDL-Lite.item.upnp:artist');
+
+      const albumArtUrl = url.parse(song.albumArtURI);
+      const albumArtUrlQuerystring = querystring.parse(albumArtUrl.query);
+      song.albumArtURI = albumArtUrlQuerystring.playlistId;
     }
 
     console.log('parseSong [OUT]', song);
