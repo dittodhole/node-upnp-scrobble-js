@@ -49,18 +49,17 @@
 
             var updateMeterFn = function () {
                 var positionInSeconds = {{this.song.positionInSeconds}};
-                var actualPositionInSeconds = (Date.now() - songTimestamp) / 1000 + positionInSeconds + {{@root.statusPageMeterUpdateIntervalInSeconds}};
-                if (actualPositionInSeconds >= durationInSeconds) {
+                var futurePositionInSeconds = (Date.now() - songTimestamp) / 1000 + positionInSeconds + {{@root.statusPageMeterUpdateIntervalInSeconds}};
+                if (futurePositionInSeconds >= durationInSeconds) {
                     window.clearInterval(meterIntervals['{{this.UDN}}']);
                     meterIntervals['{{this.UDN}}'] = null;
                     window.setTimeout(function () {
                         window.location.reload();
-                    }, ({{@root.statusPageMeterUpdateIntervalInSeconds}} + {{@root.statusPageRefreshAfterPlayTimeoutInSeconds}}) * 1000);
+                    }, {{@root.statusPageRefreshAfterPlayTimeoutInSeconds}} * 1000);
                 }
-                else {
-                    var meter = document.getElementById('{{this.UDN}}-meter');
-                    meter.value = actualPositionInSeconds;
-                }
+
+                var meter = document.getElementById('{{this.UDN}}-meter');
+                meter.value = futurePositionInSeconds;
 
                 return arguments.callee;
             }();
