@@ -88,7 +88,20 @@
       <strong>{{this.friendlyName}}</strong><br />
       {{this.modelName}}<br/>
       <small>Discovered at {{formatTime this.discoveryTime}}</small>
-      <div style="max-height: 350px; overflow: auto">
+      <script type="text/javascript">
+          window.setTimeout(function () {
+            var showLogButton = document.getElementById('{{this.UDN}}-showlog-button');
+            var log = document.getElementById('{{this.UDN}}-log');
+
+            showLogButton.onclick = function () {
+                log.style.display = 'block';
+            }
+          }, 0);
+      </script>
+      <button id="{{this.UDN}}-showlog-button"
+              class="button button-outline">Show log</button>
+      <div id="{{this.UDN}}-log"
+           style="max-height: 350px; overflow: auto; display: none;">
         {{#each this.services}}
         {{#each-reverse this.eventQueue._store}}
         <strong>{{formatTime this.timestamp}}</strong>
