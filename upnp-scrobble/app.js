@@ -34,6 +34,7 @@ handlebars.registerHelper('formatTime', function (time) {
 var container = {
   "statusPageMeterUpdateIntervalInSeconds": config.statusPageMeterUpdateIntervalInSeconds || 1,
   "statusPageRefreshAfterPlayTimeoutInSeconds": config.statusPageRefreshAfterPlayTimeoutInSeconds || 2,
+  "statusPageRefreshRadioTimeoutInSeconds": config.statusPageRefreshRadioTimeoutInSeconds || 60,
   "scribble": new Scribble(config.lastfm.key, config.lastfm.secret, config.lastfm.username, config.lastfm.password),
   "server": http.createServer()
     .on('request', function (req, res) {
@@ -190,6 +191,17 @@ var container = {
       const albumArtUrl = url.parse(song.albumArtURI);
       const albumArtUrlQuerystring = querystring.parse(albumArtUrl.query);
       song.albumArtURI = albumArtUrlQuerystring.playlistId.replace('-large.jpg', '-t300x300.jpg');
+    } else if (raumfeldSection === 'RadioTime') {
+      song.albumArtURI = objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI');
+
+      const trackParts = song.track.split('-');
+      song.artist = trackParts[0].trim();
+      song.track = _.rest(trackParts).join('-').trim();
+      song.album = '_';
+      if (!song.track) {
+        console.log('parseSong [OUT]', null);
+        return null;
+      }
     }
 
     console.log('parseSong [OUT]', song);

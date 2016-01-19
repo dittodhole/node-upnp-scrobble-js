@@ -44,6 +44,9 @@
             }
             var durationInSeconds = {{this.song.durationInSeconds}};
             if (!durationInSeconds) {
+              window.setTimeout(function () {
+                window.location.reload();
+              }, {{@root.statusPageRefreshRadioTimeoutInSeconds}} * 1000);
                 return;
             }
 
