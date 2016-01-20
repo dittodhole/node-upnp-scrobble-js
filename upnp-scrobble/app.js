@@ -175,7 +175,7 @@ var container = {
     const song = {
       "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
       "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
-      "album": objectPath.get(data, 'DIDL-Lite.item.upnp:album'),
+      "album": null,
       "duration": null,
       "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._'),
       "durationInSeconds": 0,
@@ -186,8 +186,6 @@ var container = {
 
     const raumfeldSection = objectPath.get(data, 'DIDL-Lite.item.raumfeld:section');
     if (raumfeldSection === 'SoundCloud') {
-      song.album = '_';
-
       const albumArtUrl = url.parse(song.albumArtURI);
       const albumArtUrlQuerystring = querystring.parse(albumArtUrl.query);
       song.albumArtURI = albumArtUrlQuerystring.playlistId.replace('-large.jpg', '-t300x300.jpg');
@@ -197,11 +195,12 @@ var container = {
       const trackParts = song.track.split('-');
       song.artist = trackParts[0].trim();
       song.track = _.rest(trackParts).join('-').trim();
-      song.album = '_';
       if (!song.track) {
         console.log('parseSong [OUT]', null);
         return null;
       }
+    } else {
+      song.album = objectPath.get(data, 'DIDL-Lite.item.upnp:album');
     }
 
     console.log('parseSong [OUT]', song);

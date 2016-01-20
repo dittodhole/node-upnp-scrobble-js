@@ -82,7 +82,9 @@
              style="width: 300px; height: 300px; border: 1px solid #606c76;" /><br />
         <strong>{{this.song.track}}</strong><br />
         {{this.song.artist}}<br />
+        {{#if this.song.album}}
         <small>{{this.song.album}}</small>
+        {{/if}}
       </div>
       {{/if}}
       <div class="float-left">
