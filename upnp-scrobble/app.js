@@ -41,7 +41,7 @@ app.get('/', function (request, response) {
   response.render('index', container);
 });
 
-http.createServer(app).listen(80);
+http.createServer(app).listen(config.statusPort || 8080);
 
 // peer stuff
 
