@@ -19,6 +19,7 @@ const config = require('./config.json');
 
 'use strict';
 
+// status stuff
 const app = express();
 const hbsConfig = {
   "helpers": {
@@ -40,12 +41,16 @@ app.get('/', function (request, response) {
   response.render('index', container);
 });
 
+http.createServer(app).listen(80);
+
+// peer stuff
+
 var container = {
   "statusPageMeterUpdateIntervalInSeconds": config.statusPageMeterUpdateIntervalInSeconds || 1,
   "statusPageRefreshAfterPlayTimeoutInSeconds": config.statusPageRefreshAfterPlayTimeoutInSeconds || 2,
   "statusPageRefreshRadioTimeoutInSeconds": config.statusPageRefreshRadioTimeoutInSeconds || 60,
   "scribble": new Scribble(config.lastfm.key, config.lastfm.secret, config.lastfm.username, config.lastfm.password),
-  "server": http.createServer(app).listen(config.serverPort),
+  "server": http.createServer().listen(config.serverPort),
   "peer": null,
   "unhandleService": function (service) {
     console.log('unhandleService', service.USN);
