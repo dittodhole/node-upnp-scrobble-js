@@ -24,7 +24,7 @@ const app = express();
 const hbsConfig = {
   "helpers": {
     "formatXML": function (data) {
-      return pd.XML(data);
+      return pd.xml(data);
     },
     "formatTime": function (time) {
       if (time) {
