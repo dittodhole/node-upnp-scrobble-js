@@ -10,25 +10,36 @@ const xmlParser = new xml2js.Parser({
 const builder = new xml2js.Builder();
 const objectPath = require('object-path');
 const Scribble = require('scribble');
-const handlebars = require('handlebars');
 const fs = require('fs');
 const pd = require('pretty-data2').pd;
-const helpers = require('diy-handlebars-helpers');
 const url = require('url');
 const querystring = require('querystring');
+const express = require('express');
+const exphbs = require('express-handlebars');
 const config = require('./config.json');
-
-_.extend(handlebars.helpers, require('diy-handlebars-helpers'));
 
 'use strict';
 
-handlebars.registerHelper('formatXML', function (data) {
-  return pd.xml(data);
-});
-handlebars.registerHelper('formatTime', function (time) {
-  if (time) {
-    return new Date(time).toISOString();
+const app = express();
+const hbsConfig = {
+  "helpers": {
+    "formatXML": function (data) {
+      return pd.XML(data);
+    },
+    "formatTime": function (time) {
+      if (time) {
+        return new Date(time).toISOString();
+      }
+      return null;
+    }
   }
+};
+_.extend(hbsConfig.helpers, require('diy-handlebars-helpers'));
+const hbs = exphbs.create(hbsConfig);
+app.engine('handlebars', hbs.engine);
+app.set('view engine', 'handlebars');
+app.get('/', function (req, res, next) {
+  res.render('index', container);
 });
 
 var container = {
@@ -36,20 +47,7 @@ var container = {
   "statusPageRefreshAfterPlayTimeoutInSeconds": config.statusPageRefreshAfterPlayTimeoutInSeconds || 2,
   "statusPageRefreshRadioTimeoutInSeconds": config.statusPageRefreshRadioTimeoutInSeconds || 60,
   "scribble": new Scribble(config.lastfm.key, config.lastfm.secret, config.lastfm.username, config.lastfm.password),
-  "server": http.createServer()
-    .on('request', function (req, res) {
-      // TODO maybe use express to define routes more easily - but does that work with peer-upnp, which expects a server?
-      if (req.url === '/') {
-        const source = fs.readFileSync('views/index.hbs', 'utf-8');
-        const template = handlebars.compile(source);
-        const html = template(container);
-        res.writeHead(200, {
-          "Content-Type": 'text/html'
-        });
-        res.write(html);
-        res.end();
-      }
-    }).listen(config.serverPort),
+  "server": http.createServer(app).listen(config.serverPort),
   "peer": null,
   "unhandleService": function (service) {
     console.log('unhandleService', service.USN);
