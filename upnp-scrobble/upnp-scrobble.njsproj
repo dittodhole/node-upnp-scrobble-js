@@ -37,7 +37,7 @@
     <Compile Include="app.js" />
     <Content Include="config.json" />
     <Content Include="package.json" />
-    <Content Include="views\index.handlebars" />
+    <Content Include="views\index.hbs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="views\" />

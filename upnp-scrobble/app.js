@@ -10,7 +10,6 @@ const xmlParser = new xml2js.Parser({
 const builder = new xml2js.Builder();
 const objectPath = require('object-path');
 const Scribble = require('scribble');
-const fs = require('fs');
 const pd = require('pretty-data2').pd;
 const url = require('url');
 const querystring = require('querystring');
@@ -35,10 +34,9 @@ const hbsConfig = {
   }
 };
 _.extend(hbsConfig.helpers, require('diy-handlebars-helpers'));
-const hbs = exphbs.create(hbsConfig);
-app.engine('handlebars', hbs.engine);
-app.set('view engine', 'handlebars');
-app.get('/', function (req, res, next) {
+app.set('view engine', 'hbs');
+app.engine('hbs', exphbs(hbsConfig));
+app.get('/', function (req, res) {
   res.render('index', container);
 });
 
