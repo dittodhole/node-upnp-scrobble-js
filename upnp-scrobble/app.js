@@ -36,8 +36,8 @@ const hbsConfig = {
 _.extend(hbsConfig.helpers, require('diy-handlebars-helpers'));
 app.set('view engine', 'hbs');
 app.engine('hbs', exphbs(hbsConfig));
-app.get('/', function (req, res) {
-  res.render('index', container);
+app.get('/', function (request, response) {
+  response.render('index', container);
 });
 
 var container = {
