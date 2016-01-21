@@ -30,7 +30,7 @@ class PeerClient extends EventEmitter {
 
     let server = http.createServer().listen(this._port);
     upnp.createPeer({
-      "server": this._server
+      "server": server
     }).on('ready', (peer) => {
       this._server = server;
       this._peer = peer;
@@ -122,7 +122,7 @@ class PeerClient extends EventEmitter {
         if (complexEvent.metadata) {
           xmlParser.parseString(complexEvent.metadata, (error, data) => {
             if (error) {
-              comlexEvent.status = error;
+              complexEvent.status = error;
               this.emit('event', complexEvent);
               return;
             }
@@ -137,8 +137,8 @@ class PeerClient extends EventEmitter {
 
             serviceClient.GetPositionInfo({
               "InstanceID": complexEvent.instanceId
-            }, (result) => {
-              song = this._songParser.fillDurationAndPosition(result, data);
+            }, (data) => {
+              song = this._songParser.fillDurationAndPosition(data, song);
               if (!song) {
                 complexEvent.status = 'Song is invalid';
                 this.emit('event', complexEvent);
