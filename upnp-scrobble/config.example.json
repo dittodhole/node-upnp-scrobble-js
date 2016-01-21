@@ -1,13 +1,13 @@
 {
   "webServerPort": 8080,
-  "peerClientPort": 1337,
+  "upnpPort": 1337,
   "lastfm": {
     "key": "",
     "secret": "",
     "username": "",
     "password": ""
   },
-  "scanIntervalInSeconds": 30,
+  "scanTimeoutInSeconds": 30,
   "serviceType": "urn:schemas-upnp-org:service:AVTransport:1",
   "scrobbleFactor": 0.8
 }

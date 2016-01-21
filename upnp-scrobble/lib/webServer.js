@@ -8,7 +8,7 @@ const exphbs = require('express-handlebars');
 
 class WebServer {
   constructor(port, dataMap) {
-    this._port = port || 8080;
+    this._port = port;
     this._dataMap = dataMap || {};
     this._app = null;
     this._server = null;

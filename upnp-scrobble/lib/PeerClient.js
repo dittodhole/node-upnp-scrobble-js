@@ -1,21 +1,23 @@
 'use strict';
 
+const EventEmitter = require('events');
 const http = require('http');
 const upnp = require('peer-upnp');
 const _ = require('underscore');
+const xml2js = require('xml2js');
 const builder = new xml2js.Builder();
 const objectPath = require('object-path');
-const xml2js = require('xml2js');
 const xmlParser = new xml2js.Parser({
   "mergeAttrs": true,
   "explicitArray": false,
   "ignoreXmlns": true
 });
 
-class PeerClient {
-  constructor(port, songParser) {
-    this._port = port || 1337;
+class PeerClient extends EventEmitter {
+  constructor(songParser, port) {
+    super();
     this._songParser = songParser;
+    this._port = port || 1337; // TODO in case no value is provided, randomize the port!
     this._server = null;
     this._peer = null;
     this._scanTimeout = null;
@@ -25,8 +27,6 @@ class PeerClient {
   };
   attachToServices(serviceType, scanTimeoutInSeconds) {
     this._resetInstance();
-
-    scanTimeoutInSeconds = scanTimeoutInSeconds || 30;
 
     let server = http.createServer().listen(this._port);
     upnp.createPeer({
@@ -80,7 +80,9 @@ class PeerClient {
     this._serviceDiscoveryTimes.delete(service.USN);
     this._serviceClients.delete(service.USN);
     service.removeAllListeners('event');
-    // TODO
+    this.emit('stopped', {
+      "serviceKey": service.USN
+    });
   };
   _handleEvent(serviceKey, data) {
     let service = this._services.get(serviceKey);
@@ -124,18 +126,62 @@ class PeerClient {
             }
 
             let song = this._songParser.parseSong(data);
+            let serviceClient = this._serviceClients.get(service.USN);
+            if (!serviceClient) {
+              return;
+            }
 
-            //container.nowPlaying(service, complexEvent.instanceId, song);
+            serviceClient.GetPositionInfo({
+              "InstanceID": complexEvent.instanceId
+            }, (result) => {
+              song = this._songParser.fillDurationAndPosition(result, data);
+              if (!song) {
+                return;
+              }
+
+              this.emit('playing', {
+                "serviceKey": service.USN,
+                "song": song
+              });
+            });
           });
         } else {
-          //container.nowPlaying(service, complexEvent.instanceId, service.device.song);
+          this.emit('playing', {
+            "serviceKey": service.USN
+          });
         }
       } else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
-        //service.device.clearSong();
+        this.emit('stopped', {
+          "serviceKey": service.USN
+        });
       } else if (complexEvent.transportState === 'NO_MEDIA_PRESENT') {
-        //service.device.clearSong();
+        this.emit('stopped', {
+          "serviceKey": service.USN
+        });
       }
     });
+  };
+  _getRemainingTimeFromSubscriptionTimeout(serviceKey) {
+    let service = this._services.get(serviceKey);
+    if (!service) {
+      return null;
+    }
+
+    let serviceDiscoveryTime = this._serviceDiscoveryTimes.get(serviceKey);
+    if (!serviceDiscoveryTime) {
+      return null;
+    }
+
+    let timeout = service.timeoutHandle;
+    let idleStart = timeout._idleStart;
+    if (idleStart < serviceDiscoveryTime) {
+      idleStart += serviceDiscoveryTime;
+    }
+
+    let idleTimeout = timeout._idleTimeout;
+    let remainingTime = idleStart + idleTimeout - Date.now();
+
+    return remainingTime;
   };
 };
 
