@@ -62,7 +62,7 @@ class PeerClient extends EventEmitter {
     this._serviceDiscoveryTimes = new Map();
     this._serviceClients = new Map();
     this._services = new Map();
-    this._resetRespawnTimeouts = new Map();
+    this._respawnTimeouts = new Map();
   };
   _scanNetwork(serviceType, scanTimeoutInSeconds) {
     if (!this._peer) {
