@@ -52,10 +52,11 @@ peerClient.on('playing', (obj) => {
   if (timeout) {
     clearTimeout(timeout);
     scrobbleTimeouts.delete(serviceKey);
+    timeout = null;
   }
 
-  let positionInSeconds = song.positionInSeconds + (Date.now() - song.timestamp);
+  let positionInSeconds = song.positionInSeconds + (Date.now() - song.timestamp) / 1000;
   let scrobbleOffsetInSeconds = Math.max(1, song.durationInSeconds * config.scrobbleFactor - positionInSeconds);
-  timeout = setTimeout(() => scribble.Scrobble(song));
+  timeout = setTimeout(() => scribble.Scrobble(song), scrobbleOffsetInSeconds * 1000);
   scrobbleTimeouts.set(serviceKey, timeout);
 });
