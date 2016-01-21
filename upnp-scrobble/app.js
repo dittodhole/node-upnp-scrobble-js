@@ -91,7 +91,7 @@ peerClient.on('continue', (data) => {
     return;
   }
 
-  _.extend(song, position);
+  data.song = _.extend(song, position);
 
   peerClient.emit('playing', data);
 });
