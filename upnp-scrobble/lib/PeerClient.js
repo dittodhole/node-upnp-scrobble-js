@@ -87,6 +87,10 @@ class PeerClient extends EventEmitter {
     this._clearRespawnTimeout(serviceKey);
 
     let remainingTimeFromScriptionTimeout = this._getRemainingTimeFromSubscriptionTimeout(serviceKey);
+    if (!remainingTimeFromScriptionTimeout) {
+      return;
+    }
+
     let respawnTimeout = setTimeout(() => {
       this.emit('respawn');
     }, remainingTimeFromScriptionTimeout + 10 * 1000);
@@ -112,6 +116,10 @@ class PeerClient extends EventEmitter {
     }
 
     let timeout = service.timeoutHandle;
+    if (!timeout) {
+      return null;
+    }
+
     let idleStart = timeout._idleStart;
     if (idleStart < serviceDiscoveryTime) {
       idleStart += serviceDiscoveryTime;
