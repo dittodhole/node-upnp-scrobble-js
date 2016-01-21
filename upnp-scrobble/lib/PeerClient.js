@@ -100,7 +100,7 @@ class PeerClient extends EventEmitter {
     let timeout = this._respawnTimeouts.get(serviceKey);
     if (timeout) {
       clearTimeout(timeout);
-      this._respawnTimeout.delete(serviceKey);
+      this._respawnTimeouts.delete(serviceKey);
       timeout = null;
     }
   }
