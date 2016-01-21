@@ -63,7 +63,7 @@ class PeerClient extends EventEmitter {
     }
 
     this._peer.removeListener(serviceType, this._handleService);
-    this._peer.on(serviceType, this._handleService);
+    this._peer.on(serviceType, (service) => this._handleService(service));
 
     this._scanTimeout = setTimeout(() => this._scanNetwork(serviceType, scanTimeoutInSeconds), scanTimeoutInSeconds * 1000);
   };
