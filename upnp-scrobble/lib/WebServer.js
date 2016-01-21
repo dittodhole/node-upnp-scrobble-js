@@ -40,7 +40,7 @@ class WebServer {
     const data = this._dataMap[viewName];
     response.render(viewName, data);
   };
-  publish(event) {
+  publish(data) {
     // TODO
   };
 };
