@@ -81,6 +81,7 @@ class PeerClient extends EventEmitter {
       this._serviceClients.set(service.USN, serviceClient);
     }).on('event', (data) => this._handleEvent(service.USN, data));
     this._resetRespawnTimeout(service.USN);
+    this.emit('serviceDiscovered', service);
   };
   _resetRespawnTimeout(serviceKey) {
     this._clearRespawnTimeout(serviceKey);
@@ -127,7 +128,7 @@ class PeerClient extends EventEmitter {
     this._serviceClients.delete(service.USN);
     this._services.delete(service.USN);
     this._clearRespawnTimeout(service.USN);
-    this.emit('stopped', {
+    this.emit('serviceDisappeared', {
       "serviceKey": service.USN
     });
   };

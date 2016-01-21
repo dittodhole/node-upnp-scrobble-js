@@ -93,3 +93,19 @@ peerClient.on('event', (complexEvent) => {
     "instance": complexEvent
   });
 });
+peerClient.on('serviceDiscovered', (service) => {
+  webServer.publish({
+    "type": 'serviceDiscovered',
+    "instance": {
+      "serviceKey": service.USN
+    }
+  });
+});
+peerClient.on('serviceDisappeared', (service) => {
+  webServer.publish({
+    "type": 'serviceDisappeared',
+    "instance": {
+      "serviceKey": service.USN
+    }
+  });
+});
