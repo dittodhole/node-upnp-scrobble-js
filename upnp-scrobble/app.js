@@ -73,7 +73,7 @@ peerClient.on('playing', (data) => {
   let scrobbleOffsetInSeconds = Math.max(1, song.durationInSeconds * config.scrobbleFactor - positionInSeconds);
   scrobbleTimeout = setTimeout(() => {
     scribble.Scrobble(song);
-    webService.publish({
+    webServer.publish({
       "type": "scrobble",
       "instance": {
         "serviceKey": serviceKey,
