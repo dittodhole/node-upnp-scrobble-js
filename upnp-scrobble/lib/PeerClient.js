@@ -177,6 +177,13 @@ class PeerClient extends EventEmitter {
       if (!complexEvent.transportState
         || complexEvent.transportState === 'PLAYING'
         || complexEvent.transportState === 'TRANSITIONING') {
+        let serviceClient = this._serviceClients.get(serviceKey);
+        if (!serviceClient) {
+          complexEvent.status = 'Could not get serviceClient';
+          this.emit('event', complexEvent);
+          return;
+        }
+
         if (complexEvent.metadata) {
           xmlParser.parseString(complexEvent.metadata, (error, data) => {
             if (error) {
@@ -186,12 +193,6 @@ class PeerClient extends EventEmitter {
             }
 
             let song = this._songParser.parseSong(data);
-            let serviceClient = this._serviceClients.get(serviceKey);
-            if (!serviceClient) {
-              complexEvent.status = 'Could not get serviceClient';
-              this.emit('event', complexEvent);
-              return;
-            }
 
             serviceClient.GetPositionInfo({
               "InstanceID": complexEvent.instanceId
@@ -212,11 +213,23 @@ class PeerClient extends EventEmitter {
             });
           });
         } else {
-          this.emit('playing', {
-            "serviceKey": serviceKey
+          serviceClient.GetPositionInfo({
+            "InstanceID": complexEvent.instanceId
+          }, (data) => {
+            let position = this._songParser.fillDurationAndPosition(data, {});
+            if (!position) {
+              complexEvent.status = 'Song is invalid';
+              this.emit('event', complexEvent);
+              return;
+            }
+
+            this.emit('continue', {
+              "serviceKey": serviceKey,
+              "position": position
+            });
+            complexEvent.status = 'Playing';
+            this.emit('event', complexEvent);
           });
-          complexEvent.status = 'Playing';
-          this.emit('event', complexEvent);
         }
       } else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
         this.emit('stopped', {

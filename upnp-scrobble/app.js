@@ -48,13 +48,10 @@ peerClient.on('playing', (data) => {
   let serviceKey = data.serviceKey;
   let song = data.song;
   if (!song) {
-    song = songStorage.get(serviceKey);
-    if (!song) {
-      return;
-    }
-  } else {
-    songStorage.set(serviceKey, song);
+    return;
   }
+
+  songStorage.set(serviceKey, song);
 
   scribble.NowPlaying(song);
   webServer.publish({
@@ -85,6 +82,18 @@ peerClient.on('playing', (data) => {
     });
   }, scrobbleOffsetInSeconds * 1000);
   scrobbleTimeouts.set(serviceKey, scrobbleTimeout);
+});
+peerClient.on('continue', (data) => {
+  let serviceKey = data.serviceKey;
+  let position = data.position;
+  let song = songStorage.get(serviceKey);
+  if (!song) {
+    return;
+  }
+
+  _.extend(song, position);
+
+  peerClient.emit('play', data);
 });
 peerClient.on('event', (complexEvent) => {
   webServer.publish({
