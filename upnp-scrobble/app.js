@@ -29,7 +29,6 @@ const songStorage = new Map();
 const scrobbleTimeouts = new Map();
 peerClient.on('stopped', (data) => {
   let serviceKey = data.serviceKey;
-  songStorage.delete(serviceKey);
 
   let scrobbleTimeout = scrobbleTimeouts.get(serviceKey);
   if (scrobbleTimeout) {
