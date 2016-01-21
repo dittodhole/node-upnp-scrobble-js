@@ -5,7 +5,7 @@ const url = require('url');
 const querystring = require('querystring');
 
 class SongParser {
-  static parseSong(data) {
+  parseSong(data) {
     let song = {
       "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
       "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
@@ -18,6 +18,11 @@ class SongParser {
       "timestamp": Date.now()
     };
 
+    this._parseSectionData(data, song);
+
+    return song;
+  };
+  _parseSectionData(data, song) {
     let raumfeldSection = objectPath.get(data, 'DIDL-Lite.item.raumfeld:section');
     if (raumfeldSection === 'SoundCloud') {
       let albumArtUrl = url.parse(song.albumArtURI);
@@ -29,16 +34,11 @@ class SongParser {
       let trackParts = song.track.split('-');
       song.artist = trackParts[0].trim();
       song.track = _.rest(trackParts).join('-').trim();
-      if (!song.track) {
-        return null;
-      }
     } else {
       song.album = objectPath.get(data, 'DIDL-Lite.item.upnp:album');
     }
-
-    return song;
   };
-  static getSeconds(duration) {
+  getSeconds(duration) {
     if (!duration) {
       return 0;
     }
@@ -48,4 +48,6 @@ class SongParser {
 
     return seconds;
   };
-}
+};
+
+module.exports = SongParser;

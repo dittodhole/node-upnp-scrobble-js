@@ -1,5 +1,6 @@
 {
   "webServerPort": 8080,
+  "peerClientPort": 1337,
   "lastfm": {
     "key": "",
     "secret": "",

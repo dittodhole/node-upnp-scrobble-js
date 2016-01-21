@@ -12,32 +12,30 @@ const xmlParser = new xml2js.Parser({
 });
 const builder = new xml2js.Builder();
 const objectPath = require('object-path');
-const Scribble = require('scribble');
 */
 
 const config = require('./config.json');
 
-const WebServer = require('./lib/webServer');
+const WebServer = require('./lib/WebServer');
 const webServer = new WebServer(config.webServerPort);
 
-const SongStorage = require('./lib/songStorage');
+const SongStorage = require('./lib/SongStorage');
 const songStorage = new SongStorage();
+
+const Scribble = require('scribble');
+const scribble = new Scribble(config.lastfm.key, config.lastfm.secret, config.lastfm.username, config.lastfm.password);
+
+const serviceClients = new Map();
 
 /*
 var container = {
-  "scribble": new Scribble(config.lastfm.key, config.lastfm.secret, config.lastfm.username, config.lastfm.password),
-  "server": http.createServer().listen(config.serverPort),
-  "peer": null,
   "unhandleService": function (service) {
-    console.log('unhandleService', service.USN);
-
     if (service.clearResetPeerTimeout) {
       service.clearResetPeerTimeout();
     }
     if (service.device.clear) {
       service.device.clearSong();
     }
-    service.removeAllListeners('event');
   },
   "nowPlaying": function (service, instanceId, song) {
     console.log('nowPlaying', service.USN, song);
@@ -109,60 +107,9 @@ var container = {
 
     return remainingTime;
   },
-  "resetPeer": function () {
-    console.log('resetPeer');
-
-    this.clearScanTimeout();
-
-    const that = this;
-    _.each(this.peer.remoteDevices, function (remoteDevice) {
-      _.each(remoteDevice.services, function (service) {
-        that.unhandleService(service);
-      });
-    });
-
-    if (this.peer) {
-      this.peer.close();
-      this.peer = null;
-    }
-
-    // forcing a fresh upnp-discovery in 5 seconds (for a clean stack)
-    setTimeout(joinUpnpNetwork, 5 * 1000);
-  },
-  "scanTimeout": null,
-  "clearScanTimeout": function () {
-    if (this.scanTimeout) {
-      clearTimeout(this.scanTimeout);
-      this.scanTimeout = null;
-    }
-  },
-};
-
-function joinUpnpNetwork() {
-  upnp.createPeer({
-    "server": container.server
-  }).on('ready', function (peer) {
-    container.peer = peer;
-
-    peer.on('disappear', container.unhandleService);
-
-    const scanFn = function () {
-      console.log('scanFn');
-
-      peer.removeListener(config.serviceType, handleService);
-      peer.on(config.serviceType, handleService);
-
-      container.scanTimeout = setTimeout(scanFn, (config.scanIntervalInSeconds || 30) * 1000);
-    };
-    scanFn();
-  }).start();
 };
 
 function handleService(service) {
-  console.log('handleService', service.USN);
-
-  service.device.discoveryTime = Date.now();
-  service.device.song = null;
   service.device.scrobbleSongTimeout = null;
   service.device.clearScrobbleSongTimeout = function () {
     clearTimeout(this.scrobbleSongTimeout);
@@ -181,83 +128,5 @@ function handleService(service) {
       this.resetPeerTimeout = null;
     }
   };
-  service.eventQueue = {
-    "_store": [],
-    "_maxLength": config.eventLogMaxLength || 10,
-    "enqueue": function (obj) {
-      console.log('received event', service.USN, obj);
-
-      this._store.push(obj);
-      if (this._store.length > this._maxLength) {
-        this._store.shift();
-      }
-    }
-  };
-
-  service.serviceClient = null;
-  service.bind(function (serviceClient) {
-    service.serviceClient = serviceClient;
-  }).on('event', function (data) {
-    handleEvent(data, service);
-  });
 };
-
-function handleEvent(data, service) {
-  console.log('handleEvent', service.USN, data);
-
-  container.enqueueResetPeerTimeout(service);
-
-  const complexEvent = {
-    "timestamp": Date.now(),
-    "change": data.LastChange,
-    "event": builder.buildObject(data),
-    "transportState": null,
-    "metadata": null,
-    "instanceId": null
-  };
-  service.eventQueue.enqueue(complexEvent);
-
-  if (!_.isString(complexEvent.change)) {
-    // TODO add logging
-    return;
-  }
-
-  xmlParser.parseString(complexEvent.change, function (error, data) {
-    if (error) {
-      // TODO add logging
-      return;
-    }
-
-    const metadata = objectPath.get(data, 'Event.InstanceID.CurrentTrackMetaData') || objectPath.get(data, 'Event.InstanceID.AVTransportURIMetaData');
-
-    complexEvent.transportState = objectPath.get(data, 'Event.InstanceID.TransportState.val');
-    complexEvent.metadata = objectPath.get(metadata, 'val');
-    complexEvent.instanceId = objectPath.get(data, 'Event.InstanceID.val');
-
-    if (!complexEvent.transportState
-      || complexEvent.transportState === 'PLAYING'
-      || complexEvent.transportState === 'TRANSITIONING') {
-      if (complexEvent.metadata) {
-        xmlParser.parseString(complexEvent.metadata, function (error, data) {
-          if (error) {
-            // TODO add logging
-            return;
-          }
-
-          const song = container.parseSong(data);
-
-          container.nowPlaying(service, complexEvent.instanceId, song);
-        });
-      } else {
-        container.nowPlaying(service, complexEvent.instanceId, service.device.song);
-      }
-    } else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
-      service.device.clearSong();
-    } else if (complexEvent.transportState === 'NO_MEDIA_PRESENT') {
-      service.device.clearSong();
-    }
-  });
-};
-
-joinUpnpNetwork();
 */

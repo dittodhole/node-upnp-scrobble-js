@@ -17,10 +17,10 @@ class WebServer {
   _initialize() {
     let hbsConfig = {
       "helpers": {
-        "formatXML": function (data) {
+        "formatXML": (data) => {
           return pd.xml(data);
         },
-        "formatTime": function (time) {
+        "formatTime": (time) => {
           if (time) {
             return new Date(time).toISOString();
           }
