@@ -68,11 +68,11 @@ class PeerClient extends EventEmitter {
     this._scanTimeout = setTimeout(() => this._scanNetwork(serviceType, scanTimeoutInSeconds), scanTimeoutInSeconds * 1000);
   };
   _handleService(service) {
-    this._services.add(service.USN, service);
-    this._serviceDiscoveryTimes.add(service.USN, Date.now());
+    this._services.set(service.USN, service);
+    this._serviceDiscoveryTimes.set(service.USN, Date.now());
 
     service.bind((serviceClient) => {
-      this._serviceClients.add(service.USN, serviceClient);
+      this._serviceClients.set(service.USN, serviceClient);
     }).on('event', (data) => this._handleEvent(service.USN, data));
   };
   _unhandleService(service) {
