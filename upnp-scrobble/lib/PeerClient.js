@@ -85,11 +85,6 @@ class PeerClient extends EventEmitter {
     });
   };
   _handleEvent(serviceKey, data) {
-    let service = this._services.get(serviceKey);
-    if (!service) {
-      return;
-    }
-
     let complexEvent = {
       "instanceId": null,
       "change": data.LastChange,
@@ -133,7 +128,7 @@ class PeerClient extends EventEmitter {
             }
 
             let song = this._songParser.parseSong(data);
-            let serviceClient = this._serviceClients.get(service.USN);
+            let serviceClient = this._serviceClients.get(serviceKey);
             if (!serviceClient) {
               complexEvent.status = 'Could not get serviceClient';
               this.emit('event', complexEvent);
@@ -151,7 +146,7 @@ class PeerClient extends EventEmitter {
               }
 
               this.emit('playing', {
-                "serviceKey": service.USN,
+                "serviceKey": serviceKey,
                 "song": song
               });
               complexEvent.status = 'Playing';
@@ -160,16 +155,16 @@ class PeerClient extends EventEmitter {
           });
         } else {
           this.emit('playing', {
-            "serviceKey": service.USN
+            "serviceKey": serviceKey
           });
         }
       } else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
         this.emit('stopped', {
-          "serviceKey": service.USN
+          "serviceKey": serviceKey
         });
       } else if (complexEvent.transportState === 'NO_MEDIA_PRESENT') {
         this.emit('stopped', {
-          "serviceKey": service.USN
+          "serviceKey": serviceKey
         });
       }
     });
