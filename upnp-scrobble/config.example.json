@@ -8,10 +8,5 @@
   },
   "scanIntervalInSeconds": 30,
   "serviceType": "urn:schemas-upnp-org:service:AVTransport:1",
-  "serverPort": 1337,
-  "eventLogMaxLength": 10,
-  "scrobbleFactor": 0.8,
-  "statusPageMeterUpdateIntervalInSeconds": 5,
-  "statusPageRefreshAfterPlayTimeoutInSeconds": 2,
-  "statusPageRefreshRadioTimeoutInSeconds": 60
+  "scrobbleFactor": 0.8
 }

@@ -25,9 +25,6 @@ const songStorage = new SongStorage();
 
 /*
 var container = {
-  "statusPageMeterUpdateIntervalInSeconds": config.statusPageMeterUpdateIntervalInSeconds || 1,
-  "statusPageRefreshAfterPlayTimeoutInSeconds": config.statusPageRefreshAfterPlayTimeoutInSeconds || 2,
-  "statusPageRefreshRadioTimeoutInSeconds": config.statusPageRefreshRadioTimeoutInSeconds || 60,
   "scribble": new Scribble(config.lastfm.key, config.lastfm.secret, config.lastfm.username, config.lastfm.password),
   "server": http.createServer().listen(config.serverPort),
   "peer": null,
@@ -41,16 +38,6 @@ var container = {
       service.device.clearSong();
     }
     service.removeAllListeners('event');
-  },
-  "getSeconds": function (duration) {
-    if (!duration) {
-      return 0;
-    }
-
-    const parts = duration.split(':');
-    const seconds = (+parts[0]) * 60 * 60 + (+parts[1]) * 60 + (+parts[2]);
-
-    return seconds;
   },
   "nowPlaying": function (service, instanceId, song) {
     console.log('nowPlaying', service.USN, song);

@@ -37,5 +37,15 @@ class SongParser {
     }
 
     return song;
-  }
+  };
+  static getSeconds(duration) {
+    if (!duration) {
+      return 0;
+    }
+
+    let parts = duration.split(':');
+    let seconds = (+parts[0]) * 60 * 60 + (+parts[1]) * 60 + (+parts[2]);
+
+    return seconds;
+  };
 }
