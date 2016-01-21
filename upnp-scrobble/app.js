@@ -70,7 +70,7 @@ peerClient.on('playing', (data) => {
   if (scrobbleTimeout) {
     clearTimeout(scrobbleTimeout);
     scrobbleTimeouts.delete(serviceKey);
-    timeout = null;
+    scrobbleTimeout = null;
   }
 
   let positionInSeconds = song.positionInSeconds + (Date.now() - song.timestamp) / 1000;
