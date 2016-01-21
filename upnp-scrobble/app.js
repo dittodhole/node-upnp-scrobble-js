@@ -25,41 +25,71 @@ peerClient.attachToServices(config.serviceType, config.scanTimeoutInSeconds);
 
 const songStorage = new Map();
 const scrobbleTimeouts = new Map();
-peerClient.on('stopped', (obj) => {
-  let serviceKey = obj.serviceKey;
+peerClient.on('stopped', (data) => {
+  let serviceKey = data.serviceKey;
   songStorage.delete(serviceKey);
 
-  let timeout = scrobbleTimeouts.get(serviceKey);
-  if (timeout) {
-    clearTimeout(timeout);
+  let scrobbleTimeout = scrobbleTimeouts.get(serviceKey);
+  if (scrobbleTimeout) {
+    clearTimeout(scrobbleTimeout);
     scrobbleTimeouts.delete(serviceKey);
+    scrobbleTimeout = null;
   }
+
+  webServer.publish({
+    "type": 'stop',
+    "instance": {
+      "serviceKey": serviceKey
+    }
+  });
 });
-peerClient.on('playing', (obj) => {
-  let serviceKey = obj.serviceKey;
-  let song = obj.song;
+peerClient.on('playing', (data) => {
+  let serviceKey = data.serviceKey;
+  let song = data.song;
   if (!song) {
     song = songStorage.get(serviceKey);
   }
+  else {
+    songStorage.set(serviceKey, song);
+  }
+
   if (!song) {
     return;
   }
 
   scribble.NowPlaying(song);
+  webServer.publish({
+    "type": "play",
+    "instance": {
+      "serviceKey": serviceKey,
+      "song": song
+    }
+  });
 
-  let timeout = scrobbleTimeouts.get(serviceKey);
-  if (timeout) {
-    clearTimeout(timeout);
+  let scrobbleTimeout = scrobbleTimeouts.get(serviceKey);
+  if (scrobbleTimeout) {
+    clearTimeout(scrobbleTimeout);
     scrobbleTimeouts.delete(serviceKey);
     timeout = null;
   }
 
   let positionInSeconds = song.positionInSeconds + (Date.now() - song.timestamp) / 1000;
   let scrobbleOffsetInSeconds = Math.max(1, song.durationInSeconds * config.scrobbleFactor - positionInSeconds);
-  timeout = setTimeout(() => scribble.Scrobble(song), scrobbleOffsetInSeconds * 1000);
-  scrobbleTimeouts.set(serviceKey, timeout);
+  scrobbleTimeout = setTimeout(() => {
+    scribble.Scrobble(song);
+    webService.publish({
+      "type": "scrobble",
+      "instance": {
+        "serviceKey": serviceKey,
+        "song": song
+      }
+    });
+  }, scrobbleOffsetInSeconds * 1000);
+  scrobbleTimeouts.set(serviceKey, scrobbleTimeout);
 });
 peerClient.on('event', (complexEvent) => {
-  console.log(complexEvent);
-  // TODO
+  webServer.publish({
+    "type": 'complexEvent',
+    "instance": complexEvent
+  });
 });
