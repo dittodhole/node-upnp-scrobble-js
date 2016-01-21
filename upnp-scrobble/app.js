@@ -4,8 +4,9 @@
 const _ = require('underscore');
 
 const config = _.extend({
-  "serviceType": 'urn:schemas-upnp-org:service:AVTransport:1',
   "scanTimeoutInSeconds": 30,
+  "scrobbleFactor": 0.8,
+  "serviceType": 'urn:schemas-upnp-org:service:AVTransport:1',
   "webServerPort": 8080
 }, require('./config.json'));
 
@@ -24,9 +25,16 @@ const peerClient = new PeerClient(songParser, config.upnpPort);
 peerClient.attachToServices(config.serviceType, config.scanTimeoutInSeconds);
 
 const songStorage = new Map();
+const scrobbleTimeouts = new Map();
 peerClient.on('stopped', (obj) => {
   let serviceKey = obj.serviceKey;
   songStorage.delete(serviceKey);
+
+  let timeout = scrobbleTimeouts.get(serviceKey);
+  if (timeout) {
+    clearTimeout(timeout);
+    scrobbleTimeouts.delete(serviceKey);
+  }
 });
 peerClient.on('playing', (obj) => {
   let serviceKey = obj.serviceKey;
@@ -38,9 +46,16 @@ peerClient.on('playing', (obj) => {
     return;
   }
 
-  //song.absoluteScrobbleOffsetInSeconds = song.durationInSeconds * (config.scrobbleFactor || 0.8);
-  //song.relativeScrobbleOffsetInSeconds = Math.max(1, song.absoluteScrobbleOffsetInSeconds - song.positionInSeconds);
+  scribble.NowPlaying(song);
 
-  // TODO send nowPlaying
-  // TODO enqueue timer for scrobble
+  let timeout = scrobbleTimeouts.get(serviceKey);
+  if (timeout) {
+    clearTimeout(timeout);
+    scrobbleTimeouts.delete(serviceKey);
+  }
+
+  let positionInSeconds = song.positionInSeconds + (Date.now() - song.timestamp);
+  let scrobbleOffsetInSeconds = Math.max(1, song.durationInSeconds * config.scrobbleFactor - positionInSeconds);
+  timeout = setTimeout(() => scribble.Scrobble(song));
+  scrobbleTimeouts.set(serviceKey, timeout);
 });
