@@ -35,8 +35,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="app.js" />
-    <Compile Include="lib\songStorage.js" />
-    <Compile Include="lib\webServer.js" />
+    <Compile Include="lib\PeerClient.js" />
+    <Compile Include="lib\SongParser.js" />
+    <Compile Include="lib\WebServer.js" />
     <Content Include="config.json" />
     <Content Include="package.json" />
     <Content Include="views\index.hbs" />
