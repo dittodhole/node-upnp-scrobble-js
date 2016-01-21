@@ -17,7 +17,7 @@ class PeerClient extends EventEmitter {
   constructor(songParser, port) {
     super();
     this._songParser = songParser;
-    this._port = port || 1337; // TODO in case no value is provided, randomize the port!
+    this._port = port || 0;
     this._server = null;
     this._peer = null;
     this._scanTimeout = null;
