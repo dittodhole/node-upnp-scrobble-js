@@ -93,7 +93,7 @@ peerClient.on('continue', (data) => {
 
   _.extend(song, position);
 
-  peerClient.emit('play', data);
+  peerClient.emit('playing', data);
 });
 peerClient.on('event', (complexEvent) => {
   webServer.publish({
