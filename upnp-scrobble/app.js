@@ -60,5 +60,6 @@ peerClient.on('playing', (obj) => {
   scrobbleTimeouts.set(serviceKey, timeout);
 });
 peerClient.on('event', (complexEvent) => {
+  console.log(complexEvent);
   // TODO
 });

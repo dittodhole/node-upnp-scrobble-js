@@ -157,15 +157,21 @@ class PeerClient extends EventEmitter {
           this.emit('playing', {
             "serviceKey": serviceKey
           });
+          complexEvent.status = 'Playing';
+          this.emit('event', complexEvent);
         }
       } else if (complexEvent.transportState === 'PAUSED_PLAYBACK') {
         this.emit('stopped', {
           "serviceKey": serviceKey
         });
+        complexEvent.status = 'Paused';
+        this.emit('event', complexEvent);
       } else if (complexEvent.transportState === 'NO_MEDIA_PRESENT') {
         this.emit('stopped', {
           "serviceKey": serviceKey
         });
+        complexEvent.status = 'Stopped';
+        this.emit('event', complexEvent);
       }
     });
   };
