@@ -1,15 +1,14 @@
 {
+  "webServerPort": 8080,
   "lastfm": {
     "key": "",
     "secret": "",
     "username": "",
     "password": ""
   },
-  "logLevel": "info",
   "scanIntervalInSeconds": 30,
   "serviceType": "urn:schemas-upnp-org:service:AVTransport:1",
   "serverPort": 1337,
-  "statusPort": 8080,
   "eventLogMaxLength": 10,
   "scrobbleFactor": 0.8,
   "statusPageMeterUpdateIntervalInSeconds": 5,

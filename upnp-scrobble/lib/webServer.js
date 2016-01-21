@@ -1,37 +1,48 @@
-﻿var http = require('http');
-var _ = require('underscore');
-var pd = require('pretty-data2').pd;
-var express = require('express');
-var exphbs = require('express-handlebars');
+﻿'use strict';
 
-function webServer(port, dataMap) {
-  var hbsConfig = {
-    helpers: {
-      formatXML: function (data) {
-        return pd.xml(data);
-      },
-      formatTime: function (time) {
-        if (time) {
-          return new Date(time).toISOString();
-        }
-        return null;
-      }
-    }
+const http = require('http');
+const _ = require('underscore');
+const pd = require('pretty-data2').pd;
+const express = require('express');
+const exphbs = require('express-handlebars');
+
+class WebServer {
+  constructor(port, dataMap) {
+    this._port = port || 8080;
+    this._dataMap = dataMap || {};
+    this._app = null;
+    this._server = null;
+    this._initialize();
   };
-  _.extend(hbsConfig.helpers, require('diy-handlebars-helpers'));
+  _initialize() {
+    let hbsConfig = {
+      "helpers": {
+        "formatXML": function (data) {
+          return pd.xml(data);
+        },
+        "formatTime": function (time) {
+          if (time) {
+            return new Date(time).toISOString();
+          }
+          return null;
+        }
+      }
+    };
+    _.extend(hbsConfig.helpers, require('diy-handlebars-helpers'));
 
-  var app = express();
-  app.set('view engine', 'hbs');
-  app.engine('hbs', exphbs(hbsConfig));
-  app.get('/', function (request, response) {
-    var viewName = 'index';
-    var data = dataMap[viewName];
-    response.render('index', data);
-  });
-
-  http.createServer(app).listen(port || 8080);
-
-  return this;
+    this._app = express();
+    this._app.set('view engine', 'hbs');
+    this._app.engine('hbs', exphbs(hbsConfig));
+    this._app.get('/', (request, response) => this._renderView('index', request, response));
+    this._server = http.createServer(this._app).listen(this._port);
+  };
+  _renderView(viewName, request, response) {
+    const data = this._dataMap[viewName];
+    response.render(viewName, data);
+  };
+  publish(event) {
+    // TODO
+  };
 };
 
-module.exports = webServer;
+module.exports = WebServer;

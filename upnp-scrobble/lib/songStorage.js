@@ -1,22 +1,25 @@
-﻿var events = require('events');
-var utils = require('utils');
+﻿'use strict';
 
-function songStorage() {
-  events.EventEmitter.call(this);
+const EventEmitter = require('events');
 
-  var storage = {};
-  this.clearSong = function (deviceKey) {
-    storage.delete(deviceKey);
-    this.emit('cleared', deviceKey);
+class SongStorage extends EventEmitter {
+  constructor() {
+    super();
+    this._storage = new Map();
   };
-  this.setSong = function (deviceKey, song) {
-    storage[deviceKey] = song;
-    this.emit('set', deviceKey, song);
+  setSong(deviceKey, song) {
+    this._storage.set(deviceKey, song);
+    this.emit('setSong', {
+      "deviceKey": deviceKey,
+      "song": song
+    });
   };
-
-  return this;
+  clearSong(deviceKey) {
+    this._storage.delete(deviceKey);
+    this.emit('clearSong', {
+      "deviceKey": deviceKey
+    });
+  };
 };
 
-utils.inherit(songStorage, events);
-
-module.exports = songStorage;
+module.exports = SongStorage;

@@ -1,4 +1,7 @@
-﻿const http = require('http');
+﻿'use strict';
+
+/*
+const http = require('http');
 const upnp = require('peer-upnp');
 const _ = require('underscore');
 const xml2js = require('xml2js');
@@ -10,41 +13,17 @@ const xmlParser = new xml2js.Parser({
 const builder = new xml2js.Builder();
 const objectPath = require('object-path');
 const Scribble = require('scribble');
-const pd = require('pretty-data2').pd;
-const url = require('url');
-const querystring = require('querystring');
-const express = require('express');
-const exphbs = require('express-handlebars');
+*/
+
 const config = require('./config.json');
 
-'use strict';
+const WebServer = require('./lib/webServer');
+const webServer = new WebServer(config.webServerPort);
 
-// status stuff
-const app = express();
-const hbsConfig = {
-  "helpers": {
-    "formatXML": function (data) {
-      return pd.xml(data);
-    },
-    "formatTime": function (time) {
-      if (time) {
-        return new Date(time).toISOString();
-      }
-      return null;
-    }
-  }
-};
-_.extend(hbsConfig.helpers, require('diy-handlebars-helpers'));
-app.set('view engine', 'hbs');
-app.engine('hbs', exphbs(hbsConfig));
-app.get('/', function (request, response) {
-  response.render('index', container);
-});
+const SongStorage = require('./lib/songStorage');
+const songStorage = new SongStorage();
 
-http.createServer(app).listen(config.statusPort || 8080);
-
-// peer stuff
-
+/*
 var container = {
   "statusPageMeterUpdateIntervalInSeconds": config.statusPageMeterUpdateIntervalInSeconds || 1,
   "statusPageRefreshAfterPlayTimeoutInSeconds": config.statusPageRefreshAfterPlayTimeoutInSeconds || 2,
@@ -170,44 +149,6 @@ var container = {
       this.scanTimeout = null;
     }
   },
-  "parseSong": function (data) {
-    console.log('parseSong', data);
-
-    const song = {
-      "artist": objectPath.get(data, 'DIDL-Lite.item.upnp:artist'),
-      "track": objectPath.get(data, 'DIDL-Lite.item.dc:title'),
-      "album": null,
-      "duration": null,
-      "albumArtURI": objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI._'),
-      "durationInSeconds": 0,
-      "positionInSeconds": 0,
-      "scrobbleOffsetInSeconds": 0,
-      "timestamp": Date.now()
-    };
-
-    const raumfeldSection = objectPath.get(data, 'DIDL-Lite.item.raumfeld:section');
-    if (raumfeldSection === 'SoundCloud') {
-      const albumArtUrl = url.parse(song.albumArtURI);
-      const albumArtUrlQuerystring = querystring.parse(albumArtUrl.query);
-      song.albumArtURI = albumArtUrlQuerystring.playlistId.replace('-large.jpg', '-t300x300.jpg');
-    } else if (raumfeldSection === 'RadioTime') {
-      song.albumArtURI = objectPath.get(data, 'DIDL-Lite.item.upnp:albumArtURI');
-
-      const trackParts = song.track.split('-');
-      song.artist = trackParts[0].trim();
-      song.track = _.rest(trackParts).join('-').trim();
-      if (!song.track) {
-        console.log('parseSong [OUT]', null);
-        return null;
-      }
-    } else {
-      song.album = objectPath.get(data, 'DIDL-Lite.item.upnp:album');
-    }
-
-    console.log('parseSong [OUT]', song);
-
-    return song;
-  }
 };
 
 function joinUpnpNetwork() {
@@ -332,3 +273,4 @@ function handleEvent(data, service) {
 };
 
 joinUpnpNetwork();
+*/
