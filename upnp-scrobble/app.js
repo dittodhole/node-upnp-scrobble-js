@@ -1,6 +1,5 @@
 ﻿'use strict';
 
-
 const _ = require('underscore');
 
 const config = _.extend({
@@ -59,4 +58,7 @@ peerClient.on('playing', (obj) => {
   let scrobbleOffsetInSeconds = Math.max(1, song.durationInSeconds * config.scrobbleFactor - positionInSeconds);
   timeout = setTimeout(() => scribble.Scrobble(song), scrobbleOffsetInSeconds * 1000);
   scrobbleTimeouts.set(serviceKey, timeout);
+});
+peerClient.on('event', (complexEvent) => {
+  // TODO
 });

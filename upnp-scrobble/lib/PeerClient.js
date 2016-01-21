@@ -95,6 +95,7 @@ class PeerClient extends EventEmitter {
       "change": data.LastChange,
       "event": builder.buildObject(data),
       "metadata": null,
+      "status": null,
       "timestamp": Date.now(),
       "transportState": null
     };
@@ -102,11 +103,15 @@ class PeerClient extends EventEmitter {
     // TODO send the complexEvent (when completed) to the client
 
     if (!_.isString(complexEvent.change)) {
+      complexEvent.status = 'Could not parse event.LastChange';
+      this.emit('event', complexEvent);
       return;
     }
 
     xmlParser.parseString(complexEvent.change, (error, data) => {
       if (error) {
+        complexEvent.status = error;
+        this.emit('event', complexEvent);
         return;
       }
 
@@ -122,12 +127,16 @@ class PeerClient extends EventEmitter {
         if (complexEvent.metadata) {
           xmlParser.parseString(complexEvent.metadata, (error, data) => {
             if (error) {
+              comlexEvent.status = error;
+              this.emit('event', complexEvent);
               return;
             }
 
             let song = this._songParser.parseSong(data);
             let serviceClient = this._serviceClients.get(service.USN);
             if (!serviceClient) {
+              complexEvent.status = 'Could not get serviceClient';
+              this.emit('event', complexEvent);
               return;
             }
 
@@ -136,6 +145,8 @@ class PeerClient extends EventEmitter {
             }, (result) => {
               song = this._songParser.fillDurationAndPosition(result, data);
               if (!song) {
+                complexEvent.status = 'Song is invalid';
+                this.emit('event', complexEvent);
                 return;
               }
 
@@ -143,6 +154,8 @@ class PeerClient extends EventEmitter {
                 "serviceKey": service.USN,
                 "song": song
               });
+              complexEvent.status = 'Playing';
+              this.emit('event', complexEvent);
             });
           });
         } else {
