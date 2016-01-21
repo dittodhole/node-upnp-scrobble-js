@@ -39,16 +39,16 @@ class SongParser {
   };
   fillDurationAndPosition(data, song) {
     if (!data.RelTime) {
-      return;
+      return null;
     }
     if (data.RelTime === 'NOT_IMPLEMENTED') {
-      return;
+      return null;
     }
     if (!data.TrackDuration) {
-      return;
+      return null;
     }
     if (data.TrackDuration === 'NOT_IMPLEMENTED') {
-      return;
+      return null;
     }
 
     song.duration = data.TrackDuration;
