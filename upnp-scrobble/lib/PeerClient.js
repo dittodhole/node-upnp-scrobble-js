@@ -17,13 +17,14 @@ class PeerClient extends EventEmitter {
   constructor(songParser, port) {
     super();
     this._songParser = songParser;
-    this._port = port || 0;
+    this._port = port;
     this._server = null;
     this._peer = null;
     this._scanTimeout = null;
-    this._serviceDiscoveryTimes = new Map();
-    this._serviceClients = new Map();
-    this._services = new Map();
+    this._serviceDiscoveryTimes = null;
+    this._serviceClients = null;
+    this._services = null;
+    this._respawnTimeouts = null;
   };
   attachToServices(serviceType, scanTimeoutInSeconds) {
     this._resetInstance();
@@ -45,8 +46,9 @@ class PeerClient extends EventEmitter {
       this._scanTimeout = null;
     }
     if (this._peer) {
+      // TODO find a better way (ie without external dependencies) to iterate over objects
       _.each(this._peer.remoteDevices, (remoteDevice) => {
-        _.each(remoteDevice.services, this._unhandleService);
+        _.each(remoteDevice.services, (service) => this._unhandleService(service));
       });
 
       this._peer.close();
@@ -56,6 +58,11 @@ class PeerClient extends EventEmitter {
       this._server.close();
       this._server = null;
     }
+
+    this._serviceDiscoveryTimes = new Map();
+    this._serviceClients = new Map();
+    this._services = new Map();
+    this._resetRespawnTimeouts = new Map();
   };
   _scanNetwork(serviceType, scanTimeoutInSeconds) {
     if (!this._peer) {
@@ -70,21 +77,63 @@ class PeerClient extends EventEmitter {
   _handleService(service) {
     this._services.set(service.USN, service);
     this._serviceDiscoveryTimes.set(service.USN, Date.now());
-
     service.bind((serviceClient) => {
       this._serviceClients.set(service.USN, serviceClient);
     }).on('event', (data) => this._handleEvent(service.USN, data));
+    this._resetRespawnTimeout(service.USN);
+  };
+  _resetRespawnTimeout(serviceKey) {
+    this._clearRespawnTimeout(serviceKey);
+
+    let remainingTimeFromScriptionTimeout = this._getRemainingTimeFromSubscriptionTimeout(serviceKey);
+    let respawnTimeout = setTimeout(() => {
+      this.emit('respawn');
+    }, remainingTimeFromScriptionTimeout + 10 * 1000);
+    this._respawnTimeouts.set(serviceKey, respawnTimeout);
+  };
+  _clearRespawnTimeout(serviceKey) {
+    let timeout = this._respawnTimeouts.get(serviceKey);
+    if (timeout) {
+      clearTimeout(timeout);
+      this._respawnTimeout.delete(serviceKey);
+      timeout = null;
+    }
+  }
+  _getRemainingTimeFromSubscriptionTimeout(serviceKey) {
+    let service = this._services.get(serviceKey);
+    if (!service) {
+      return null;
+    }
+
+    let serviceDiscoveryTime = this._serviceDiscoveryTimes.get(serviceKey);
+    if (!serviceDiscoveryTime) {
+      return null;
+    }
+
+    let timeout = service.timeoutHandle;
+    let idleStart = timeout._idleStart;
+    if (idleStart < serviceDiscoveryTime) {
+      idleStart += serviceDiscoveryTime;
+    }
+
+    let idleTimeout = timeout._idleTimeout;
+    let remainingTime = idleStart + idleTimeout - Date.now();
+
+    return remainingTime;
   };
   _unhandleService(service) {
-    this._services.delete(service.USN);
+    service.removeAllListeners('event');
     this._serviceDiscoveryTimes.delete(service.USN);
     this._serviceClients.delete(service.USN);
-    service.removeAllListeners('event');
+    this._services.delete(service.USN);
+    this._clearRespawnTimeout(service.USN);
     this.emit('stopped', {
       "serviceKey": service.USN
     });
   };
   _handleEvent(serviceKey, data) {
+    this._resetRespawnTimeout(serviceKey);
+
     let complexEvent = {
       "instanceId": null,
       "change": data.LastChange,
@@ -174,28 +223,6 @@ class PeerClient extends EventEmitter {
         this.emit('event', complexEvent);
       }
     });
-  };
-  _getRemainingTimeFromSubscriptionTimeout(serviceKey) {
-    let service = this._services.get(serviceKey);
-    if (!service) {
-      return null;
-    }
-
-    let serviceDiscoveryTime = this._serviceDiscoveryTimes.get(serviceKey);
-    if (!serviceDiscoveryTime) {
-      return null;
-    }
-
-    let timeout = service.timeoutHandle;
-    let idleStart = timeout._idleStart;
-    if (idleStart < serviceDiscoveryTime) {
-      idleStart += serviceDiscoveryTime;
-    }
-
-    let idleTimeout = timeout._idleTimeout;
-    let remainingTime = idleStart + idleTimeout - Date.now();
-
-    return remainingTime;
   };
 };
 

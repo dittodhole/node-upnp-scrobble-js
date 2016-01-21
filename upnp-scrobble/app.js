@@ -6,6 +6,7 @@ const config = _.extend({
   "scanTimeoutInSeconds": 30,
   "scrobbleFactor": 0.8,
   "serviceType": 'urn:schemas-upnp-org:service:AVTransport:1',
+  "upnpPort": 0,
   "webServerPort": 8080
 }, require('./config.json'));
 
@@ -22,6 +23,7 @@ const songParser = new SongParser();
 const PeerClient = require('./lib/PeerClient');
 const peerClient = new PeerClient(songParser, config.upnpPort);
 peerClient.attachToServices(config.serviceType, config.scanTimeoutInSeconds);
+peerClient.on('respawn', () => peerClient.attachToServices(config.serviceType, config.scanTimeoutInSeconds));
 
 const songStorage = new Map();
 const scrobbleTimeouts = new Map();
@@ -48,13 +50,11 @@ peerClient.on('playing', (data) => {
   let song = data.song;
   if (!song) {
     song = songStorage.get(serviceKey);
-  }
-  else {
+    if (!song) {
+      return;
+    }
+  } else {
     songStorage.set(serviceKey, song);
-  }
-
-  if (!song) {
-    return;
   }
 
   scribble.NowPlaying(song);
