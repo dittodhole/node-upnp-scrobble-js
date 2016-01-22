@@ -35,7 +35,7 @@ class WebServer {
     this._app.engine('hbs', exphbs(hbsConfig));
     this._app.get('/', (request, response) => this._renderView('index', request, response));
     this._server = http.createServer(this._app).listen(this._port);
-  };
+  }
   _renderView(viewName, request, response) {
     const data = this._dataMap[viewName];
     response.render(viewName, data);
