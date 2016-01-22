@@ -29,8 +29,9 @@ class PeerClient extends EventEmitter {
   attachToServices(serviceType, scanTimeoutInSeconds) {
     this._resetInstance();
 
-    let server = http.createServer().listen(this._port);
     this.on('respawn', () => this.attachToServices(serviceType, scanTimeoutInSeconds));
+
+    let server = http.createServer().listen(this._port);
 
     upnp.createPeer({
       "server": server
