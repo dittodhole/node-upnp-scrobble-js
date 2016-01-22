@@ -104,7 +104,10 @@ peerClient.on('serviceDiscovered', (service) => {
   webServer.publish({
     "type": 'serviceDiscovered',
     "instance": {
-      "serviceKey": service.USN
+      "serviceKey": service.USN,
+      "deviceIcon": service.device.icons[0].url,
+      "deviceName": service.device.friendlyName,
+      "deviceModelName": service.device.modelName
     }
   });
 });
