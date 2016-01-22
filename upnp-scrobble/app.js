@@ -112,10 +112,18 @@ peerClient.on('serviceDiscovered', (service) => {
   });
 });
 peerClient.on('serviceDisappeared', (service) => {
+  let serviceKey = service.USN;
+
+  if (scrobbleTimeout) {
+    clearTimeout(scrobbleTimeout);
+    scrobbleTimeouts.delete(serviceKey);
+    scrobbleTimeout = null;
+  }
+
   webServer.publish({
     "type": 'serviceDisappeared',
     "instance": {
-      "serviceKey": service.USN
+      "serviceKey": serviceKey
     }
   });
 });
