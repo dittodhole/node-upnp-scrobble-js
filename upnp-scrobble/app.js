@@ -23,7 +23,6 @@ const songParser = new SongParser();
 const PeerClient = require('./lib/PeerClient');
 const peerClient = new PeerClient(songParser, config.upnpPort);
 peerClient.attachToServices(config.serviceType, config.scanTimeoutInSeconds);
-peerClient.on('respawn', () => peerClient.attachToServices(config.serviceType, config.scanTimeoutInSeconds));
 
 const songStorage = new Map();
 const scrobbleTimeouts = new Map();

@@ -30,6 +30,8 @@ class PeerClient extends EventEmitter {
     this._resetInstance();
 
     let server = http.createServer().listen(this._port);
+    this.on('respawn', () => this.attachToServices(serviceType, scanTimeoutInSeconds));
+
     upnp.createPeer({
       "server": server
     }).on('ready', (peer) => {
@@ -41,6 +43,8 @@ class PeerClient extends EventEmitter {
     }).start();
   }
   _resetInstance() {
+    this.removeAllListeners('respawn');
+
     if (this._scanTimeout) {
       clearTimeout(this._scanTimeout);
       this._scanTimeout = null;
