@@ -53,7 +53,11 @@ class PeerClient extends EventEmitter {
     if (this._peer) {
       // TODO find a better way (ie without external dependencies) to iterate over objects
       _.each(this._peer.remoteDevices, (remoteDevice) => {
-        _.each(remoteDevice.services, (service) => this._unhandleService(service));
+        _.each(remoteDevice.services, (service) => {
+          if (!this._services.has(service.USN)) {
+            this._unhandleService(service);
+          }
+        });
       });
 
       this._peer.close();
