@@ -93,11 +93,11 @@ class PeerClient extends EventEmitter {
   }
   _resetRespawnTimeout(serviceKey) {
     this._clearRespawnTimeout(serviceKey);
-    const remainingTimeFromScriptionTimeout = this._getRemainingTimeFromSubscriptionTimeout(serviceKey);
+    let remainingTimeFromScriptionTimeout = this._getRemainingTimeFromSubscriptionTimeout(serviceKey);
     if (!remainingTimeFromScriptionTimeout) {
       return;
     }
-    const respawnTimeout = setTimeout(() => {
+    let respawnTimeout = setTimeout(() => {
       this.emit('respawn');
     }, remainingTimeFromScriptionTimeout + 10 * 1000);
     this._respawnTimeouts.set(serviceKey, respawnTimeout);
@@ -119,7 +119,7 @@ class PeerClient extends EventEmitter {
     if (!service) {
       return null;
     }
-    const timeout = service.timeoutHandle;
+    let timeout = service.timeoutHandle;
     if (!timeout) {
       return null;
     }
@@ -128,8 +128,8 @@ class PeerClient extends EventEmitter {
     if (idleStart < serviceDiscoveryTime) {
       idleStart += serviceDiscoveryTime;
     }
-    const idleTimeout = timeout._idleTimeout;
-    const remainingTime = idleStart + idleTimeout - Date.now();
+    let idleTimeout = timeout._idleTimeout;
+    let remainingTime = idleStart + idleTimeout - Date.now();
     return remainingTime;
   }
   _unhandleService(service) {
