@@ -84,7 +84,6 @@ class PeerClient extends EventEmitter {
     service.bind((serviceClient) => {
       this._serviceClients.set(service.USN, serviceClient);
     }).on('event', (data) => this._handleEvent(service.USN, data));
-    this._resetRespawnTimeout(service.USN);
     this.emit('serviceDiscovered', service);
   }
   _resetRespawnTimeout(serviceKey) {
