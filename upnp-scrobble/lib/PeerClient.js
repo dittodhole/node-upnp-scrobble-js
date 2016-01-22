@@ -25,7 +25,7 @@ class PeerClient extends EventEmitter {
     this._serviceClients = null;
     this._services = null;
     this._respawnTimeouts = null;
-  };
+  }
   attachToServices(serviceType, scanTimeoutInSeconds) {
     this._resetInstance();
 
@@ -39,7 +39,7 @@ class PeerClient extends EventEmitter {
 
       this._scanNetwork(serviceType, scanTimeoutInSeconds);
     }).start();
-  };
+  }
   _resetInstance() {
     if (this._scanTimeout) {
       clearTimeout(this._scanTimeout);
@@ -63,7 +63,7 @@ class PeerClient extends EventEmitter {
     this._serviceClients = new Map();
     this._services = new Map();
     this._respawnTimeouts = new Map();
-  };
+  }
   _scanNetwork(serviceType, scanTimeoutInSeconds) {
     if (!this._peer) {
       return;
@@ -73,7 +73,7 @@ class PeerClient extends EventEmitter {
     this._peer.on(serviceType, (service) => this._handleService(service));
 
     this._scanTimeout = setTimeout(() => this._scanNetwork(serviceType, scanTimeoutInSeconds), scanTimeoutInSeconds * 1000);
-  };
+  }
   _handleService(service) {
     this._services.set(service.USN, service);
     this._serviceDiscoveryTimes.set(service.USN, Date.now());
@@ -82,20 +82,18 @@ class PeerClient extends EventEmitter {
     }).on('event', (data) => this._handleEvent(service.USN, data));
     this._resetRespawnTimeout(service.USN);
     this.emit('serviceDiscovered', service);
-  };
+  }
   _resetRespawnTimeout(serviceKey) {
     this._clearRespawnTimeout(serviceKey);
-
-    let remainingTimeFromScriptionTimeout = this._getRemainingTimeFromSubscriptionTimeout(serviceKey);
+    const remainingTimeFromScriptionTimeout = this._getRemainingTimeFromSubscriptionTimeout(serviceKey);
     if (!remainingTimeFromScriptionTimeout) {
       return;
     }
-
-    let respawnTimeout = setTimeout(() => {
+    const respawnTimeout = setTimeout(() => {
       this.emit('respawn');
     }, remainingTimeFromScriptionTimeout + 10 * 1000);
     this._respawnTimeouts.set(serviceKey, respawnTimeout);
-  };
+  }
   _clearRespawnTimeout(serviceKey) {
     let timeout = this._respawnTimeouts.get(serviceKey);
     if (timeout) {
@@ -109,13 +107,11 @@ class PeerClient extends EventEmitter {
     if (!service) {
       return null;
     }
-
-    let serviceDiscoveryTime = this._serviceDiscoveryTimes.get(serviceKey);
+    const serviceDiscoveryTime = this._serviceDiscoveryTimes.get(serviceKey);
     if (!serviceDiscoveryTime) {
       return null;
     }
-
-    let timeout = service.timeoutHandle;
+    const timeout = service.timeoutHandle;
     if (!timeout) {
       return null;
     }
@@ -124,12 +120,10 @@ class PeerClient extends EventEmitter {
     if (idleStart < serviceDiscoveryTime) {
       idleStart += serviceDiscoveryTime;
     }
-
-    let idleTimeout = timeout._idleTimeout;
-    let remainingTime = idleStart + idleTimeout - Date.now();
-
+    const idleTimeout = timeout._idleTimeout;
+    const remainingTime = idleStart + idleTimeout - Date.now();
     return remainingTime;
-  };
+  }
   _unhandleService(service) {
     service.removeAllListeners('event');
     this._serviceDiscoveryTimes.delete(service.USN);
@@ -139,7 +133,7 @@ class PeerClient extends EventEmitter {
     this.emit('serviceDisappeared', {
       "serviceKey": service.USN
     });
-  };
+  }
   _handleEvent(serviceKey, data) {
     this._resetRespawnTimeout(serviceKey);
 
@@ -245,7 +239,7 @@ class PeerClient extends EventEmitter {
         this.emit('event', complexEvent);
       }
     });
-  };
-};
+  }
+}
 
 module.exports = PeerClient;

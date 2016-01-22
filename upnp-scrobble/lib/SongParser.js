@@ -20,7 +20,7 @@ class SongParser {
     this._parseSectionData(data, song);
 
     return song;
-  };
+  }
   _parseSectionData(data, song) {
     let raumfeldSection = objectPath.get(data, 'DIDL-Lite.item.raumfeld:section');
     if (raumfeldSection === 'SoundCloud') {
@@ -36,7 +36,7 @@ class SongParser {
     } else {
       song.album = objectPath.get(data, 'DIDL-Lite.item.upnp:album');
     }
-  };
+  }
   fillDurationAndPosition(data, song) {
     if (!data.RelTime) {
       return null;
@@ -57,7 +57,7 @@ class SongParser {
     song.timestamp = Date.now();
 
     return song;
-  };
+  }
   _getSeconds(duration) {
     if (!duration) {
       return 0;
@@ -67,7 +67,7 @@ class SongParser {
     let seconds = (+parts[0]) * 60 * 60 + (+parts[1]) * 60 + (+parts[2]);
 
     return seconds;
-  };
-};
+  }
+}
 
 module.exports = SongParser;

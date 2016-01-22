@@ -13,7 +13,7 @@ class WebServer {
     this._app = null;
     this._server = null;
     this._initialize();
-  };
+  }
   _initialize() {
     let hbsConfig = {
       "helpers": {
@@ -39,10 +39,10 @@ class WebServer {
   _renderView(viewName, request, response) {
     const data = this._dataMap[viewName];
     response.render(viewName, data);
-  };
+  }
   publish(data) {
     // TODO
-  };
-};
+  }
+}
 
 module.exports = WebServer;
