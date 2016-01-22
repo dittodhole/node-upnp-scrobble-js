@@ -111,12 +111,12 @@ class PeerClient extends EventEmitter {
     }
   }
   _getRemainingTimeFromSubscriptionTimeout(serviceKey) {
-    let service = this._services.get(serviceKey);
-    if (!service) {
+    let serviceDiscoveryTime = this._serviceDiscoveryTimes.get(serviceKey);
+    if (!serviceDiscoveryTime) {
       return null;
     }
-    const serviceDiscoveryTime = this._serviceDiscoveryTimes.get(serviceKey);
-    if (!serviceDiscoveryTime) {
+    let service = this._services.get(serviceKey);
+    if (!service) {
       return null;
     }
     const timeout = service.timeoutHandle;
