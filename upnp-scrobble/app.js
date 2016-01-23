@@ -38,9 +38,7 @@ peerClient.on('stopped', (data) => {
 
   webServer.publish({
     "type": 'stop',
-    "instance": {
-      "serviceKey": serviceKey
-    }
+    "serviceKey": serviceKey
   });
 });
 peerClient.on('playing', (data) => {
@@ -55,8 +53,8 @@ peerClient.on('playing', (data) => {
   scribble.NowPlaying(song);
   webServer.publish({
     "type": "play",
-    "instance": {
-      "serviceKey": serviceKey,
+    "serviceKey": serviceKey,
+    "data": {
       "song": song
     }
   });
@@ -74,8 +72,8 @@ peerClient.on('playing', (data) => {
     scribble.Scrobble(song);
     webServer.publish({
       "type": "scrobble",
-      "instance": {
-        "serviceKey": serviceKey,
+      "serviceKey": serviceKey,
+      "data": {
         "song": song
       }
     });
@@ -97,17 +95,22 @@ peerClient.on('continue', (data) => {
 peerClient.on('event', (complexEvent) => {
   webServer.publish({
     "type": 'complexEvent',
-    "instance": complexEvent
+    "serviceKey": complexEvent.serviceKey,
+    "data": {
+      "complexEvent": complexEvent
+    }
   });
 });
 peerClient.on('serviceDiscovered', (service) => {
   webServer.publish({
     "type": 'serviceDiscovered',
-    "instance": {
-      "serviceKey": service.USN,
-      "deviceIcon": service.device.icons[0].url,
-      "deviceName": service.device.friendlyName,
-      "deviceModelName": service.device.modelName
+    "serviceKey": service.USN,
+    "data": {
+      "service": {
+        "deviceIcon": service.device.icons[0].url,
+        "deviceName": service.device.friendlyName,
+        "deviceModelName": service.device.modelName
+      }
     }
   });
 });
@@ -122,8 +125,6 @@ peerClient.on('serviceDisappeared', (service) => {
 
   webServer.publish({
     "type": 'serviceDisappeared',
-    "instance": {
-      "serviceKey": serviceKey
-    }
+    "serviceKey": serviceKey
   });
 });

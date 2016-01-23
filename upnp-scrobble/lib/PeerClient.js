@@ -150,6 +150,7 @@ class PeerClient extends EventEmitter {
       "change": data.LastChange,
       "event": builder.buildObject(data),
       "metadata": null,
+      "serviceKey": serviceKey,
       "status": null,
       "timestamp": Date.now(),
       "transportState": null

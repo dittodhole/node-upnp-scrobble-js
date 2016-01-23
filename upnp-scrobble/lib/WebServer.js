@@ -5,6 +5,7 @@ const _ = require('underscore');
 const pd = require('pretty-data2').pd;
 const express = require('express');
 const exphbs = require('express-handlebars');
+const socket = require('socket.io');
 
 class WebServer {
   constructor(port, dataMap) {
@@ -12,6 +13,7 @@ class WebServer {
     this._dataMap = dataMap || {};
     this._app = null;
     this._server = null;
+    this._io = null;
     this._initialize();
   }
   _initialize() {
@@ -35,13 +37,17 @@ class WebServer {
     this._app.engine('hbs', exphbs(hbsConfig));
     this._app.get('/', (request, response) => this._renderView('index', request, response));
     this._server = http.createServer(this._app).listen(this._port);
+    this._io = socket(this._server);
   }
   _renderView(viewName, request, response) {
-    const data = this._dataMap[viewName];
+    let data = this._dataMap[viewName];
+    data = _.extend({
+      "port": this._server.address().port
+    }, data);
     response.render(viewName, data);
   }
   publish(data) {
-    // TODO
+    this._io.emit('message', data);
   }
 }
 

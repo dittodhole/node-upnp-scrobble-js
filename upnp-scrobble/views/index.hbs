@@ -26,7 +26,13 @@
         transition: {{this.statusPageMeterUpdateIntervalInSeconds}}s linear width;
       }
   </style>
+  <script src="/socket.io/socket.io.js"></script>
   <script type="text/javascript">
+    'use strict';
+    let socket = io.connect('//localhost:{{port}}');
+    socket.on('message', (data) => {
+      debugger;
+    });
     var meterIntervals = {};
   </script>
 </head>
