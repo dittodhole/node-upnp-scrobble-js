@@ -156,8 +156,6 @@ class PeerClient extends EventEmitter {
       "transportState": null
     };
 
-    // TODO send the complexEvent (when completed) to the client
-
     if (!_.isString(complexEvent.change)) {
       complexEvent.status = 'Could not parse event.LastChange';
       this.emit('event', complexEvent);
