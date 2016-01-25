@@ -1,0 +1,23 @@
+{
+  "name": "upnp-scrobble",
+  "description": "A scrobbler that attaches to UPnP devices (MediaRenderer/AVTransport) and forwards plays to Last.fm",
+  "main": "app.js",
+  "authors": [
+    "Andreas Niedermair (andreas@niedermair.name)"
+  ],
+  "license": "WTFNMFPLv3",
+  "homepage": "https://github.com/dittodhole/node-upnp-scrobble-js",
+  "moduleType": [],
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "knockout-observable-dictionary": "https://github.com/bennyn/knockout.observableDictionary.git",
+    "knockout": "knockoutjs#~3.4.0"
+  }
+}
