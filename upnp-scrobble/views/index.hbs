@@ -81,6 +81,7 @@
         return observableService;
       }
       addService(service) {
+        this.removeService(service.serviceKey);
         service = new Service(service);
         this.services.push(service);
       }
