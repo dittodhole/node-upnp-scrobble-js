@@ -55,7 +55,8 @@ class PeerClient extends EventEmitter {
       // TODO find a better way (ie without external dependencies) to iterate over objects
       _.each(this._peer.remoteDevices, (remoteDevice) => {
         _.each(remoteDevice.services, (service) => {
-          if (!this._services.has(service.USN)) {
+          let serviceKey = this.getServiceKey(service);
+          if (!this._services.has(serviceKey)) {
             this._unhandleService(service);
           }
         });
@@ -86,17 +87,26 @@ class PeerClient extends EventEmitter {
     this._scanTimeout = setTimeout(() => this._scanNetwork(serviceType, scanTimeoutInSeconds), scanTimeoutInSeconds * 1000);
   }
   _handleService(service) {
-    this._services.set(service.USN, service);
-    this._serviceDiscoveryTimes.set(service.USN, Date.now());
-    let serviceGroup = this._serviceGroups.get(service.device.serialNumber);
-    if (!serviceGroup) {
-      serviceGroup = [];
+    let serviceKey = this.getServiceKey(service);
+    let serviceGroupKey = this.getServiceGroupKey(service);
+    let serviceGroup = this._serviceGroups.get(serviceGroupKey);
+    if (serviceGroup) {
+      let oldService = serviceGroup[serviceKey];
+      if (oldService) {
+        this._unhandleService(oldService);
+        serviceGroup = this._serviceGroups.get(serviceGroupKey);
+      }
+    } else {
+      serviceGroup = {};
     }
-    serviceGroup.push(service.USN);
-    this._serviceGroups.set(service.device.serialNumber, serviceGroup);
+    serviceGroup[serviceKey] = service;
+
+    this._services.set(serviceKey, service);
+    this._serviceDiscoveryTimes.set(serviceKey, Date.now());
+    this._serviceGroups.set(serviceGroupKey, serviceGroup);
     service.bind((serviceClient) => {
-      this._serviceClients.set(service.USN, serviceClient);
-    }).on('event', (data) => this._handleEvent(service.USN, data));
+      this._serviceClients.set(serviceKey, serviceClient);
+    }).on('event', (data) => this._handleEvent(serviceKey, data));
     this.emit('serviceDiscovered', service);
   }
   _resetRespawnTimeout(serviceKey) {
@@ -142,17 +152,20 @@ class PeerClient extends EventEmitter {
   }
   _unhandleService(service) {
     service.removeAllListeners('event');
-    this._serviceDiscoveryTimes.delete(service.USN);
-    this._serviceClients.delete(service.USN);
-    this._services.delete(service.USN);
-    this._clearRespawnTimeout(service.USN);
-    let serviceGroup = this._serviceGroups.get(service.device.serialNumber);
+
+    let serviceKey = this.getServiceKey(service);
+    let serviceGroupKey = this.getServiceGroupKey(service);
+    this._serviceDiscoveryTimes.delete(serviceKey);
+    this._serviceClients.delete(serviceKey);
+    this._services.delete(serviceKey);
+    this._clearRespawnTimeout(serviceKey);
+    let serviceGroup = this._serviceGroups.get(serviceGroupKey);
     if (serviceGroup) {
-      serviceGroup.remove(service.USN);
-      this._serviceGroups.set(service.device.serialNumber, serviceGroup);
+      delete serviceGroup[serviceKey];
+      this._serviceGroups.set(serviceGroupKey, serviceGroup);
     }
     this.emit('serviceDisappeared', {
-      "serviceKey": service.USN
+      "serviceKey": serviceKey
     });
   }
   _handleEvent(serviceKey, data) {
@@ -205,11 +218,17 @@ class PeerClient extends EventEmitter {
           return;
         }
 
-        let serviceGroup = this._serviceGroups.get(service.device.serialNumber);
+        let serviceGroupKey = this.getServiceGroupKey(service);
+        let serviceGroup = this._serviceGroups.get(serviceGroupKey);
         if (serviceGroup) {
-          serviceGroup.forEach((serviceKey) => this.emit('stopped', {
-            "serviceKey": serviceKey
-          }));
+          Object.keys(serviceGroup).forEach((key) => {
+            if (serviceKey === key) {
+              return;
+            }
+            this.emit('stopped', {
+              "serviceKey": key
+            });
+          });
         }
 
         if (complexEvent.metadata) {
@@ -278,6 +297,16 @@ class PeerClient extends EventEmitter {
     let services = Array.from(this._services.values());
 
     return services;
+  }
+  getServiceKey(service) {
+    let serviceKey = `${service.device.serialNumber}::${service.device.friendlyName}`;
+
+    return serviceKey;
+  }
+  getServiceGroupKey(service) {
+    let serviceGroupKey = service.device.serialNumber;
+
+    return serviceGroupKey;
   }
 }
 
