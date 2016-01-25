@@ -247,6 +247,11 @@ class PeerClient extends EventEmitter {
       }
     });
   }
+  getServices() {
+    let services = Array.from(this._services.values());
+
+    return services;
+  }
 }
 
 module.exports = PeerClient;

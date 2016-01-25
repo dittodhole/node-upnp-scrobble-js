@@ -1,5 +1,6 @@
 ﻿'use strict';
 
+const EventEmitter = require('events');
 const http = require('http');
 const _ = require('underscore');
 const pd = require('pretty-data2').pd;
@@ -7,8 +8,9 @@ const express = require('express');
 const exphbs = require('express-handlebars');
 const socket = require('socket.io');
 
-class WebServer {
+class WebServer extends EventEmitter {
   constructor(port, dataMap) {
+    super();
     this._port = port;
     this._dataMap = dataMap || {};
     this._app = null;
@@ -39,6 +41,9 @@ class WebServer {
     this._app.use(express.static('bower_components'));
     this._server = http.createServer(this._app).listen(this._port);
     this._io = socket(this._server);
+    this._io.sockets.on('connection', (socket) => {
+      socket.on('getServices', () => this.emit('getServices'));
+    });
   }
   _renderView(viewName, request, response) {
     let data = this._dataMap[viewName];

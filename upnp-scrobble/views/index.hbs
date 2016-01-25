@@ -8,51 +8,72 @@
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/milligram/1.0.3/milligram.min.css" />
   <script src="/socket.io/socket.io.js"></script>
   <script type="text/javascript" src="/knockout/dist/knockout.js"></script>
-  <script type="text/javascript" src="/knockout-observable-dictionary/dist/ko.observableDictionary.min.js"></script>
-  <script type="text/javascript" defer="defer">
+  <script type="text/javascript">
     'use strict';
+    class Service {
+      constructor(service) {
+        this.serviceKey = service.serviceKey;
+        this.deviceIcon = service.deviceIcon;
+        this.deviceName = service.deviceName;
+        this.deviceModelName = service.deviceModelName;
+        this.song = ko.observable();
+      }
+    }
     class ViewModel {
       constructor() {
-        this._services = new ko.observableDictionary();
+        this.services = ko.observableArray();
       }
-      addService(serviceKey, service) {
-        let observableService = ko.observable(service);
-        this.services.set(serviceKey, observableService);
+      _getService(serviceKey) {
+        var observableService = ko.utils.arrayFirst(this.services(), (item) => item.serviceKey == serviceKey);
+
+        return observableService;
+      }
+      addService(service) {
+        service = new Service(service);
+        this.services.push(service);
       }
       removeService(serviceKey) {
-        this.services.remove(serviceKey);
-      }
-      addSong(serviceKey, song) {
-        let observableService = this.services.get(serviceKey);
-        let service = observableService();
+        var service = this._getService(serviceKey);
         if (!service) {
           return;
         }
 
+        this.services.remove(service);
+      }
+      addSong(serviceKey, song) {
+        let service = this._getService(serviceKey);
+        if (!service) {
+          return;
+        }
+
+        song = ko.observable(song);
         service.song = song;
       }
       removeSong(serviceKey) {
-        let observableService = this.services.get(serviceKey);
-        let service = observableService();
+        let service = this._getService(serviceKey);
         if (!service) {
           return;
         }
 
         service.song = null;
       }
-      get services() {
-        return this._services;
-      }
     };
 
-    let viewModel = new ViewModel();
-    ko.applyBindings(viewModel);
-
     let socket = io.connect();
+    let viewModel = new ViewModel();
+
+    window.onload = () => {
+      ko.applyBindings(viewModel);
+      socket.emit('getServices');
+    };
+
     socket.on('message', (data) => {
       switch (data.type) {
+        case 'getServicesResponse':
+          ko.utils.arrayForEach(data.services, (service) => viewModel.addService(service));
+          break;
         case 'serviceDiscovered':
-          viewModel.addService(data.serviceKey, data.service);
+          viewModel.addService(data.service);
           break;
         case 'serviceDisappeared':
           viewModel.removeService(data.serviceKey);
@@ -69,17 +90,17 @@
 </head>
 <body class="container"
       style="margin-top: 10px;">
-  <div class="row"
-       data-bind="foreach: services">
+  <!-- ko foreach: services -->
+  <div class="row">
     <div class="column">
       <div class="float-left">
-        <img data-bind="src: deviceIcon" />
+        <img data-bind="attr: { src: deviceIcon }" />
       </div>
-      <span data-bind="text: friendlyName"
+      <span data-bind="text: deviceName"
             style="font-weight: bold;"></span><br />
-      <span data-bind="text: modelName"></span><br />
-      <small>Discovered at {{formatTime this.discoveryTime}}</small>
+      <span data-bind="text: deviceModelName"></span><br />
     </div>
   </div>
+  <!-- /ko -->
 </body>
 </html>

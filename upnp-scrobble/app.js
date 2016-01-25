@@ -51,6 +51,7 @@ peerClient.on('playing', (data) => {
   songStorage.set(serviceKey, song);
 
   scribble.NowPlaying(song);
+
   webServer.publish({
     "type": "play",
     "serviceKey": serviceKey,
@@ -68,6 +69,7 @@ peerClient.on('playing', (data) => {
   let scrobbleOffsetInSeconds = Math.max(1, song.durationInSeconds * config.scrobbleFactor - positionInSeconds);
   scrobbleTimeout = setTimeout(() => {
     scribble.Scrobble(song);
+
     webServer.publish({
       "type": "scrobble",
       "serviceKey": serviceKey,
@@ -99,16 +101,13 @@ peerClient.on('serviceDiscovered', (service) => {
   webServer.publish({
     "type": 'serviceDiscovered',
     "serviceKey": service.USN,
-    "service": {
-      "deviceIcon": service.device.icons[0].url,
-      "deviceName": service.device.friendlyName,
-      "deviceModelName": service.device.modelName
-    }
+    "service": mapService(service)
   });
 });
 peerClient.on('serviceDisappeared', (service) => {
   let serviceKey = service.USN;
 
+  let scrobbleTimeout = scrobbleTimeouts.get(serviceKey);
   if (scrobbleTimeout) {
     clearTimeout(scrobbleTimeout);
     scrobbleTimeouts.delete(serviceKey);
@@ -120,3 +119,22 @@ peerClient.on('serviceDisappeared', (service) => {
     "serviceKey": serviceKey
   });
 });
+
+webServer.on('getServices', () => {
+  var services = peerClient.getServices();
+  webServer.publish({
+    "type": 'getServicesResponse',
+    "services": _.map(services, mapService)
+  });
+});
+
+function mapService(service) {
+  service = {
+    "deviceIcon": service.device.icons[0].url,
+    "deviceName": service.device.friendlyName,
+    "deviceModelName": service.device.modelName,
+    "serviceKey": service.USN
+  };
+
+  return service;
+}
