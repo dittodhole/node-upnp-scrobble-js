@@ -54,9 +54,7 @@ peerClient.on('playing', (data) => {
   webServer.publish({
     "type": "play",
     "serviceKey": serviceKey,
-    "data": {
-      "song": song
-    }
+    "song": song
   });
 
   let scrobbleTimeout = scrobbleTimeouts.get(serviceKey);
@@ -73,9 +71,7 @@ peerClient.on('playing', (data) => {
     webServer.publish({
       "type": "scrobble",
       "serviceKey": serviceKey,
-      "data": {
-        "song": song
-      }
+      "song": song
     });
   }, scrobbleOffsetInSeconds * 1000);
   scrobbleTimeouts.set(serviceKey, scrobbleTimeout);
@@ -96,21 +92,17 @@ peerClient.on('event', (complexEvent) => {
   webServer.publish({
     "type": 'complexEvent',
     "serviceKey": complexEvent.serviceKey,
-    "data": {
-      "complexEvent": complexEvent
-    }
+    "complexEvent": complexEvent
   });
 });
 peerClient.on('serviceDiscovered', (service) => {
   webServer.publish({
     "type": 'serviceDiscovered',
     "serviceKey": service.USN,
-    "data": {
-      "service": {
-        "deviceIcon": service.device.icons[0].url,
-        "deviceName": service.device.friendlyName,
-        "deviceModelName": service.device.modelName
-      }
+    "service": {
+      "deviceIcon": service.device.icons[0].url,
+      "deviceName": service.device.friendlyName,
+      "deviceModelName": service.device.modelName
     }
   });
 });

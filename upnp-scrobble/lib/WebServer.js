@@ -36,6 +36,7 @@ class WebServer {
     this._app.set('view engine', 'hbs');
     this._app.engine('hbs', exphbs(hbsConfig));
     this._app.get('/', (request, response) => this._renderView('index', request, response));
+    this._app.use(express.static('bower_components'));
     this._server = http.createServer(this._app).listen(this._port);
     this._io = socket(this._server);
   }

@@ -6,142 +6,75 @@
   <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.css" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/milligram/1.0.3/milligram.min.css" />
-  <style type="text/css">
-    meter {
-      -webkit-appearance: none;
-    }
-
-      ::-webkit-meter-bar {
-        background: transparent;
-      }
-
-      ::-webkit-meter-inner-element {
-        opacity: 0.5;
-        transition: {{this.statusPageMeterUpdateIntervalInSeconds}}s linear width;
-      }
-
-      ::-webkit-meter-even-less-good-value,
-      ::-webkit-meter-optimum-value,
-      ::-webkit-meter-suboptimal-value {
-        transition: {{this.statusPageMeterUpdateIntervalInSeconds}}s linear width;
-      }
-  </style>
   <script src="/socket.io/socket.io.js"></script>
+  <script type="text/javascript" src="/knockout/dist/knockout.js"></script>
+  <script type="text/javascript" src="/knockout-observable-dictionary/dist/ko.observableDictionary.min.js"></script>
   <script type="text/javascript">
     'use strict';
     let socket = io.connect('//localhost:{{port}}');
     socket.on('message', (data) => {
-      debugger;
+      switch (data.type) {
+        case 'serviceDiscovered':
+          viewModel.addService(data.serviceKey, data.service)
+          break;
+        case 'serviceDisappeared':
+          viewModel.removeService(data.serviceKey);
+          break;
+        case 'play':
+          viewModel.addSong(data.serviceKey, data.song);
+          break;
+        case 'stop':
+          viewModel.removeSong(data.serviceKey);
+          break;
+      }
     });
-    var meterIntervals = {};
+
+    class ViewModel {
+      constructor() {
+        this.services = new ko.observableDictionary();
+      }
+      addService(serviceKey, service) {
+        let observableService = ko.observable(service);
+        this.services.set(serviceKey, observableService);
+      }
+      removeService(serviceKey) {
+        this.services.remove(serviceKey);
+      }
+      addSong(serviceKey, song) {
+        let service = this.services.get(serviceKey);
+        if (!service) {
+          return;
+        }
+
+        service.song = song;
+      }
+      removeSong(serviceKey) {
+        let service = this.services.get(serviceKey);
+        if (!service) {
+          return;
+        }
+
+        service.song = null;
+      }
+    };
+
+    let viewModel = new ViewModel();
+
+    ko.applyBindings(viewModel);
   </script>
 </head>
 <body class="container"
       style="margin-top: 10px;">
-  {{#each peer.remoteDevices}}
-  <div class="row">
+  <div class="row"
+       data-bind="foreach: service">
     <div class="column">
-      {{#if song}}
-      <script type="text/javascript">
-          window.setTimeout(function () {
-            var songTimestamp = {{this.song.timestamp}};
-            if (!songTimestamp) {
-                return;
-            }
-            var durationInSeconds = {{this.song.durationInSeconds}};
-            if (!durationInSeconds) {
-              window.setTimeout(function () {
-                window.location.reload();
-              }, {{@root.statusPageRefreshRadioTimeoutInSeconds}} * 1000);
-                return;
-            }
-
-            var updateMeterFn = function () {
-                var positionInSeconds = {{this.song.positionInSeconds}};
-                var futurePositionInSeconds = (Date.now() - songTimestamp) / 1000 + positionInSeconds + {{@root.statusPageMeterUpdateIntervalInSeconds}};
-                if (futurePositionInSeconds >= durationInSeconds) {
-                    window.clearInterval(meterIntervals['{{this.UDN}}']);
-                    meterIntervals['{{this.UDN}}'] = null;
-                    window.setTimeout(function () {
-                        window.location.reload();
-                    }, {{@root.statusPageRefreshAfterPlayTimeoutInSeconds}} * 1000);
-                }
-
-                var meter = document.getElementById('{{this.UDN}}-meter');
-                meter.value = futurePositionInSeconds;
-
-                return arguments.callee;
-            }();
-
-            meterIntervals['{{this.UDN}}'] = window.setInterval(updateMeterFn, {{@root.statusPageMeterUpdateIntervalInSeconds}} * 1000);
-        }, 0);
-      </script>
-      <div class="float-right"
-           style="margin-left: 10px; text-align: right;">
-        <meter id="{{this.UDN}}-meter"
-               value="{{this.song.positionInSeconds}}"
-               max="{{this.song.durationInSeconds}}"
-               low="{{this.song.absoluteScrobbleOffsetInSeconds}}"
-               optimum="{{this.song.absoluteScrobbleOffsetInSeconds}}"
-               style="position: absolute; width: 300px; height: 300px;"></meter>
-        <img src="{{this.song.albumArtURI}}"
-             style="width: 300px; height: 300px; border: 1px solid #606c76;" /><br />
-        <strong>{{this.song.track}}</strong><br />
-        {{this.song.artist}}<br />
-        {{#if this.song.album}}
-        <small>{{this.song.album}}</small>
-        {{/if}}
-      </div>
-      {{/if}}
       <div class="float-left">
-        <img src="{{this.icons.0.url}}" /><br />
+        <img data-bind="src: deviceIcon" />
       </div>
-      <strong>{{this.friendlyName}}</strong><br />
-      {{this.modelName}}<br/>
+      <span data-bind="text: friendlyName"
+            style="font-weight: bold;"></span><br />
+      <span data-bind="text: modelName"></span><br />
       <small>Discovered at {{formatTime this.discoveryTime}}</small>
-      <script type="text/javascript">
-          window.setTimeout(function () {
-            var showLogButton = document.getElementById('{{this.UDN}}-showlog-button');
-            var log = document.getElementById('{{this.UDN}}-log');
-
-            showLogButton.onclick = function () {
-              log.style.display = 'block';
-              showLogButton.style.display = 'none';
-            };
-          }, 0);
-      </script>
-      <button id="{{this.UDN}}-showlog-button"
-              class="button button-outline"
-              style="display: block; margin-top: 1rem;">Show log</button>
-      <div id="{{this.UDN}}-log"
-           style="margin-top: 1rem; max-height: 350px; overflow: auto; display: none;">
-        {{#each this.services}}
-        {{#each-reverse this.eventQueue._store}}
-        <strong>{{formatTime this.timestamp}}</strong>
-        {{#if this.event}}
-        <div class="row">
-          <div class="column">
-            <pre><code>{{formatXML this.event}}</code></pre>
-          </div>
-        </div>
-        {{/if}}
-        {{#if this.change}}
-        <div class="row">
-          <div class="column">
-            <pre><code>{{formatXML this.change}}</code></pre>
-          </div>
-        </div>
-        {{/if}}
-        {{#if this.metadata}}
-        <div class="row">
-          <div class="column">
-            <pre><code>{{formatXML this.metadata}}</code></pre>
-          </div>
-        </div>
-        {{/if}}
-        {{/each-reverse}}
-        {{/each}}
-      </div>
     </div>
   </div>
   {{/each}}
