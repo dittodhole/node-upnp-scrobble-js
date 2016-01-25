@@ -17,7 +17,6 @@
     "tests"
   ],
   "dependencies": {
-    "knockout-observable-dictionary": "https://github.com/bennyn/knockout.observableDictionary.git",
     "knockout": "knockoutjs#~3.4.0"
   }
 }
