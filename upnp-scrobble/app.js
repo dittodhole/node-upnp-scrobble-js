@@ -124,7 +124,7 @@ webServer.on('getServices', () => {
   var services = peerClient.getServices();
   webServer.publish({
     "type": 'getServicesResponse',
-    "services": _.map(services, mapService)
+    "services": Array.from(services, mapService)
   });
 });
 
