@@ -1,5 +1,6 @@
 bin
 obj
+bower_components
 node_modules
 config.json
 .ntvs_analysis.dat
