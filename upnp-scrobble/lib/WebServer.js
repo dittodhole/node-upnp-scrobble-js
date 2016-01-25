@@ -3,7 +3,6 @@
 const EventEmitter = require('events');
 const http = require('http');
 const _ = require('underscore');
-const pd = require('pretty-data2').pd;
 const express = require('express');
 const exphbs = require('express-handlebars');
 const socket = require('socket.io');
