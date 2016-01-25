@@ -13,7 +13,7 @@
     'use strict';
     class ViewModel {
       constructor() {
-        this.services = new ko.observableDictionary();
+        this._services = new ko.observableDictionary();
       }
       addService(serviceKey, service) {
         let observableService = ko.observable(service);
@@ -41,7 +41,7 @@
         service.song = null;
       }
       get services() {
-        return this.services;
+        return this._services;
       }
     };
 
