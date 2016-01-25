@@ -11,24 +11,6 @@
   <script type="text/javascript" src="/knockout-observable-dictionary/dist/ko.observableDictionary.min.js"></script>
   <script type="text/javascript">
     'use strict';
-    let socket = io.connect();
-    socket.on('message', (data) => {
-      switch (data.type) {
-        case 'serviceDiscovered':
-          viewModel.addService(data.serviceKey, data.service)
-          break;
-        case 'serviceDisappeared':
-          viewModel.removeService(data.serviceKey);
-          break;
-        case 'play':
-          viewModel.addSong(data.serviceKey, data.song);
-          break;
-        case 'stop':
-          viewModel.removeSong(data.serviceKey);
-          break;
-      }
-    });
-
     class ViewModel {
       constructor() {
         this.services = new ko.observableDictionary();
@@ -59,8 +41,25 @@
     };
 
     let viewModel = new ViewModel();
-
     ko.applyBindings(viewModel);
+
+    let socket = io.connect();
+    socket.on('message', (data) => {
+      switch (data.type) {
+        case 'serviceDiscovered':
+          viewModel.addService(data.serviceKey, data.service);
+          break;
+        case 'serviceDisappeared':
+          viewModel.removeService(data.serviceKey);
+          break;
+        case 'play':
+          viewModel.addSong(data.serviceKey, data.song);
+          break;
+        case 'stop':
+          viewModel.removeSong(data.serviceKey);
+          break;
+      }
+    });
   </script>
 </head>
 <body class="container"
