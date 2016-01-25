@@ -23,7 +23,8 @@
         this.services.remove(serviceKey);
       }
       addSong(serviceKey, song) {
-        let service = this.services.get(serviceKey);
+        let observableService = this.services.get(serviceKey);
+        let service = observableService();
         if (!service) {
           return;
         }
@@ -31,7 +32,8 @@
         service.song = song;
       }
       removeSong(serviceKey) {
-        let service = this.services.get(serviceKey);
+        let observableService = this.services.get(serviceKey);
+        let service = observableService();
         if (!service) {
           return;
         }
@@ -65,7 +67,7 @@
 <body class="container"
       style="margin-top: 10px;">
   <div class="row"
-       data-bind="foreach: service">
+       data-bind="foreach: services">
     <div class="column">
       <div class="float-left">
         <img data-bind="src: deviceIcon" />
