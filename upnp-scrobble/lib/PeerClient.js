@@ -25,6 +25,7 @@ class PeerClient extends EventEmitter {
     this._serviceClients = null;
     this._services = null;
     this._respawnTimeouts = null;
+    this._serviceGroups = null;
   }
   attachToServices(serviceType, scanTimeoutInSeconds) {
     this._resetInstance();
@@ -72,6 +73,7 @@ class PeerClient extends EventEmitter {
     this._serviceClients = new Map();
     this._services = new Map();
     this._respawnTimeouts = new Map();
+    this._serviceGroups = new Map();
   }
   _scanNetwork(serviceType, scanTimeoutInSeconds) {
     if (!this._peer) {
@@ -86,6 +88,12 @@ class PeerClient extends EventEmitter {
   _handleService(service) {
     this._services.set(service.USN, service);
     this._serviceDiscoveryTimes.set(service.USN, Date.now());
+    let serviceGroup = this._serviceGroups.get(service.device.serialNumber);
+    if (!serviceGroup) {
+      serviceGroup = [];
+    }
+    serviceGroup.push(service.USN);
+    this._serviceGroups.set(service.device.serialNumber, serviceGroup);
     service.bind((serviceClient) => {
       this._serviceClients.set(service.USN, serviceClient);
     }).on('event', (data) => this._handleEvent(service.USN, data));
@@ -138,6 +146,11 @@ class PeerClient extends EventEmitter {
     this._serviceClients.delete(service.USN);
     this._services.delete(service.USN);
     this._clearRespawnTimeout(service.USN);
+    let serviceGroup = this._serviceGroups.get(service.device.serialNumber);
+    if (serviceGroup) {
+      serviceGroup.remove(service.USN);
+      this._serviceGroups.set(service.device.serialNumber, serviceGroup);
+    }
     this.emit('serviceDisappeared', {
       "serviceKey": service.USN
     });
@@ -183,6 +196,20 @@ class PeerClient extends EventEmitter {
           complexEvent.status = 'Could not get serviceClient';
           this.emit('event', complexEvent);
           return;
+        }
+
+        let service = this._services.get(serviceKey);
+        if (!service) {
+          complexEvent.status = 'Could not get service';
+          this.emit('event', complexEvent);
+          return;
+        }
+
+        let serviceGroup = this._serviceGroups.get(service.device.serialNumber);
+        if (serviceGroup) {
+          serviceGroup.forEach((serviceKey) => this.emit('stopped', {
+            "serviceKey": serviceKey
+          }));
         }
 
         if (complexEvent.metadata) {
