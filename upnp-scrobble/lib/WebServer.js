@@ -47,9 +47,6 @@ class WebServer extends EventEmitter {
   }
   _renderView(viewName, request, response) {
     let data = this._dataMap[viewName];
-    data = _.extend({
-      "port": this._server.address().port
-    }, data);
     response.render(viewName, data);
   }
   publish(data) {

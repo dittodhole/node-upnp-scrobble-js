@@ -6,10 +6,56 @@
   <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.css" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/milligram/1.0.3/milligram.min.css" />
+  <style type="text/css">
+    progress {
+      -webkit-appearance: none;
+      border: 1px solid #606c76;
+    }
+
+      progress::-webkit-progress-bar {
+        background: transparent;
+      }
+
+      progress::-webkit-progress-value {
+        opacity: 0.3;
+        background-color: yellow;
+      }
+
+      progress.scrobbled::-webkit-progress-value {
+        background-color: green;
+      }
+  </style>
   <script src="/socket.io/socket.io.js"></script>
   <script type="text/javascript" src="/knockout/dist/knockout.js"></script>
   <script type="text/javascript">
     'use strict';
+    class Song {
+      constructor(song) {
+        this.timestamp = song.timestamp;
+        this.durationInSeconds = song.durationInSeconds;
+        this.positionInSeconds = song.positionInSeconds;
+        this.albumArtURI = song.albumArtURI;
+        this.track = song.track;
+        this.artist = song.artist;
+        this.album = song.album;
+        this.actualTimestamp = ko.observable(Date.now());
+        this.actualPositionInSeconds = ko.computed(() => {
+          let result = this.positionInSeconds + (this.actualTimestamp() - this.timestamp) / 1000;
+
+          return result;
+        });
+        this.positionInterval = window.setInterval(() => {
+          this.actualTimestamp(Date.now());
+        }, 1000);
+        this.scrobbled = ko.pureComputed(() => {
+          let scrobbleFactor = {{scrobbleFactor}};
+          let scrobblePositionInSeconds = this.durationInSeconds * scrobbleFactor;
+          let scrobbled = this.actualPositionInSeconds() >= scrobblePositionInSeconds;
+
+          return scrobbled;
+        })
+      }
+    }
     class Service {
       constructor(service) {
         this.serviceKey = service.serviceKey;
@@ -17,6 +63,12 @@
         this.deviceName = service.deviceName;
         this.deviceModelName = service.deviceModelName;
         this.song = ko.observable();
+        let song = null;
+        if (service.song
+          && service.song.status == 'playing') {
+          song = new Song(service.song);
+        }
+        this.song(song);
       }
     }
     class ViewModel {
@@ -40,14 +92,15 @@
 
         this.services.remove(service);
       }
-      addSong(serviceKey, song) {
+      setSong(serviceKey, song) {
+        this.removeSong(serviceKey);
+
         let service = this._getService(serviceKey);
         if (!service) {
           return;
         }
 
-        song = ko.observable(song);
-        service.song = song;
+        service.song(new Song(song));
       }
       removeSong(serviceKey) {
         let service = this._getService(serviceKey);
@@ -55,7 +108,11 @@
           return;
         }
 
-        service.song = null;
+        let song = service.song();
+        if (song) {
+          window.clearInterval(song.positionInterval);
+          service.song(null);
+        }
       }
     };
 
@@ -79,7 +136,7 @@
           viewModel.removeService(data.serviceKey);
           break;
         case 'play':
-          viewModel.addSong(data.serviceKey, data.song);
+          viewModel.setSong(data.serviceKey, data.song);
           break;
         case 'stop':
           viewModel.removeSong(data.serviceKey);
@@ -99,6 +156,19 @@
       <span data-bind="text: deviceName"
             style="font-weight: bold;"></span><br />
       <span data-bind="text: deviceModelName"></span><br />
+    </div>
+    <div class="column"
+         style="text-align: right; position: relative;"
+         data-bind="if: song() != null">
+      <progress style="position: absolute; width: 300px; height: 300px;"
+                data-bind="value: song().actualPositionInSeconds(), attr: { max: song().durationInSeconds }, css: { scrobbled: song().scrobbled }"></progress>
+      <img style="width: 300px; height: 300px;"
+           data-bind="attr: { src: song().albumArtURI }" /><br />
+      <span style="font-weight: bold;"
+            data-bind="text: song().track"></span><br />
+      <span data-bind="text: song().artist"></span><br />
+      <span style="font-size: small"
+            data-bind="text: song().album, visible: song().album"></span>
     </div>
   </div>
   <!-- /ko -->

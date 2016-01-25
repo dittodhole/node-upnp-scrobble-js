@@ -12,7 +12,11 @@ const config = _.extend({
 
 
 const WebServer = require('./lib/WebServer');
-const webServer = new WebServer(config.webServerPort);
+const webServer = new WebServer(config.webServerPort, {
+  "index": {
+    "scrobbleFactor": config.scrobbleFactor
+  }
+});
 
 const Scribble = require('scribble');
 const scribble = new Scribble(config.lastfm.key, config.lastfm.secret, config.lastfm.username, config.lastfm.password);
@@ -34,6 +38,11 @@ peerClient.on('stopped', (data) => {
     clearTimeout(scrobbleTimeout);
     scrobbleTimeouts.delete(serviceKey);
     scrobbleTimeout = null;
+}
+
+  let song = songStorage.get(serviceKey);
+  if (song) {
+    song.status = 'stopped';
   }
 
   webServer.publish({
@@ -47,6 +56,8 @@ peerClient.on('playing', (data) => {
   if (!song) {
     return;
   }
+
+  song.status = 'playing';
 
   songStorage.set(serviceKey, song);
 
@@ -91,11 +102,14 @@ peerClient.on('continue', (data) => {
   peerClient.emit('playing', data);
 });
 peerClient.on('event', (complexEvent) => {
+  console.log(complexEvent);
+  /*
   webServer.publish({
     "type": 'complexEvent',
     "serviceKey": complexEvent.serviceKey,
     "complexEvent": complexEvent
   });
+  */
 });
 peerClient.on('serviceDiscovered', (service) => {
   webServer.publish({
@@ -135,6 +149,11 @@ function mapService(service) {
     "deviceModelName": service.device.modelName,
     "serviceKey": service.USN
   };
+
+  let song = songStorage.get(service.serviceKey);
+  if (song) {
+    service.song = song;
+  }
 
   return service;
 }
