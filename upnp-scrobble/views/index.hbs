@@ -44,9 +44,11 @@
 
           return result;
         });
-        this.positionInterval = window.setInterval(() => {
-          this.actualTimestamp(Date.now());
-        }, 1000);
+        if (this.durationInSeconds) {
+          this.positionInterval = window.setInterval(() => {
+            this.actualTimestamp(Date.now());
+          }, 1000);
+        }
         this.scrobbled = ko.pureComputed(() => {
           let scrobbleFactor = {{scrobbleFactor}};
           let scrobblePositionInSeconds = this.durationInSeconds * scrobbleFactor;

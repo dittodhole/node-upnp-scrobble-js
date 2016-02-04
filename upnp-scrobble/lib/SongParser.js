@@ -3,6 +3,7 @@
 const objectPath = require('object-path');
 const url = require('url');
 const querystring = require('querystring');
+const _ = require('underscore');
 
 class SongParser {
   parseSong(data) {
