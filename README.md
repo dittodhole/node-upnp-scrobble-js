@@ -1,4 +1,4 @@
-# node-upnp-scrobble-js
+# ![Icon](https://raw.githubusercontent.com/dittodhole/node-upnp-scrobble-js/master/Icons/package_icon.png) node-upnp-scrobble-js
 
 Scrobble plays of your UPnP-devices to [Last.fm](http://www.last.fm/)
 
@@ -39,3 +39,7 @@ The UPnP discovery and subscription flow is completely handled by [peer-upnp](ht
 ## License
 
 node-upnp-scrobble-js is published under [WTFNMFPLv3](http://andreas.niedermair.name/introducing-wtfnmfplv3).
+
+## Icon
+
+[Audio Spectrum](https://thenounproject.com/term/audio-spectrum/46003/) by [useiconic.com](https://thenounproject.com/useiconic.com/) from the Noun Project.
