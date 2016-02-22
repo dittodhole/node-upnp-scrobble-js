@@ -9,10 +9,10 @@
   "main": "app.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dittodhole/upnp-scrobble"
+    "url": "https://github.com/dittodhole/node-upnp-scrobble-js"
   },
   "bugs": {
-    "url": "https://github.com/dittodhole/upnp-scrobble/issues"
+    "url": "https://github.com/dittodhole/node-upnp-scrobble-js/issues"
   },
   "dependencies": {
     "express": "^4.13.3",
